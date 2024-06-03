@@ -1,0 +1,17 @@
+{
+  "name": "init-geoserver-pp",
+  "version": "1.0.0",
+  "description": "this utility create initial geoserver connection & set polygonParts mappings",
+  "main": "./src/index.mjs",
+  "scripts": {
+    "start": "node src/index.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "mapcolonies",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "env-var": "^7.5.0",
+    "zx": "^8.1.2"
+  }
+}
