@@ -1,0 +1,10 @@
+.nyc_output
+.circlei
+.github
+node_modules
+README.md
+.npmrc
+.redocly.yaml
+.nvmrc
+.git*
+build

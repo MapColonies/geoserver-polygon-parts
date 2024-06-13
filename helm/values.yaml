@@ -1,0 +1,133 @@
+global:
+  pullPolicy: Always
+  pullSecretName: acr-registry
+  cloudProvider: {}
+  environment: ''
+  
+cloudProvider:
+  dockerRegistryUrl: acrarolibotnonprod.azurecr.io
+
+image:
+  geoserverRepository: geoserver-os
+  geoserverTag: "v1.0.1-2.21.0-rc3"
+  sidecarRepository: pp-geoserver-side-car
+  sidecarTag: "v1.0.0"
+
+updateInterval: 10000
+
+geoserverDataDir: /opt/geoserver/data_dir
+
+geoserverUser: admin
+
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+# For prefilled password
+# It will be stored in secret later
+geoserverPassword: geoserver
+
+initialMemory: "128M"
+maxMemory: "756M"
+
+readiness:
+  path: "/geoserver/polygon_parts/ows?service=wfs&request=DescribeFeatureType" # change it according to workspace name changing
+
+rootCerts:
+  enabled: false
+  secretName: secret-name
+  mountPath: '/tmp/root-certs'
+
+pgSslAuth:
+  enabled: false
+  secretName: secret-name
+  mountPath: '/tmp/certs-postgres'
+
+# Define this for extra GeoServer environment variables
+extraGeoserverEnv: |
+  - name: COMMUNITY_EXTENSIONS
+    value: "cog-plugin"
+  - name: JAVA_OPTS
+    value: '-DALLOW_ENV_PARAMETRIZATION=true'
+  - name: PROXY_BASE_URL
+    value: /geoserver
+#  - name: KEY_2
+#    value: "VALUE_2"
+
+extraSidecarEnv: |
+#  - name: KEY_1
+#    value: "VALUE_1"
+#  - name: KEY_2
+#    value: "VALUE_2"
+
+labels: {}
+annotations: {}
+
+podAnnotations: {}
+
+resources:
+  enabled: false
+  limits:
+    cpu: 2
+    memory: 4500Mi
+  requests:
+    cpu: 2
+    memory: 4000Mi
+
+sidecarResources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+service:
+  ## GeoServer service type
+  type: ClusterIP
+  # clusterIP: ""
+  # externalIPs: ""
+  port: 80
+
+  # nodePort:
+
+  labels: |
+  annotations: |
+  # loadBalancerIP:
+
+  # loadBalancerSourceRanges:
+  # - 10.10.10.0/24
+
+route:
+  enabled: true
+  tls: false
+  path: /geoserver
+
+sideCar:
+  env:
+    logLevel: warn
+    ssl:
+      CA_DIR: /opt/certs/ca/
+      KEY_DIR: /opt/certs/key/
+      CERT_DIR: /opt/certs/cert/
+      CA_FILE_LOCATION: /opt/certs/ca/ca.pem
+      KEY_FILE_LOCATION: /opt/certs/key/key.pem
+      CERT_FILE_LOCATION: /opt/certs/cert/cert.pem
+  
+    dataStore:
+      host: "localhost"
+      port: "5432"
+      database: "postgres"
+      user: "postgres"
+      password: "postgres"
+      dbType: "postgis"
+      schema: "polygon_parts"
+      name: "polygon_parts"
+      ssl: 'DISABLE'
+    polygonPartsWorkspaceName: "polygon_parts" # remember update also the readiness path in case of change
+    geoserverBaseUrl: "http://localhost:8080/geoserver"
+    layer:
+      maxFeatures: 0
+      numDecimals: 0
+      titleName: "polygon_parts"

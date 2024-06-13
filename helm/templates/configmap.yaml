@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "geoserver.fullname" . }}
+  labels:
+{{ include "geoserver.labels" . | indent 4}}
+data:
+  DATA_DIR_PATH: {{ .Values.geoserverDataDir | quote }}
+  UPDATE_INTERVAL: {{ .Values.updateInterval | default 120000 | quote }}
+  INITIAL_MEMORY: {{ .Values.initialMemory | default "128M" | quote }}
+  MAX_MEMORY: {{ .Values.maxMemory | default "756M" | quote }}
+  # DB_SSL_PATH_CA: {{ .Values.sideCar.env.ssl.CA_FILE_LOCATION }}
+  # DB_SSL_PATH_KEY: {{ .Values.sideCar.env.ssl.KEY_FILE_LOCATION }}
+  # DB_SSL_PATH_CERT: {{ .Values.sideCar.env.ssl.CERT_FILE_LOCATION }}
+  GEOSERVER_USER: {{ .Values.geoserverUser | quote }}
+  GEOSERVER_PASS: {{ .Values.geoserverPassword | quote }}
+  GEOSERVER_DATA_DIR: {{ .Values.geoserverDataDir | quote }}
+  GEOSERVER_BASE_URL: {{ .Values.sideCar.env.geoserverBaseUrl | quote }}
+  DATA_STORE_HOST: {{ .Values.sideCar.env.dataStore.host | quote }}
+  DATA_STORE_PORT: {{ .Values.sideCar.env.dataStore.port | quote }}
+  DATA_STORE_DATABASE: {{ .Values.sideCar.env.dataStore.database | quote }}
+  DATA_STORE_USER: {{ .Values.sideCar.env.dataStore.user | quote }}
+  DATA_STORE_PASSWORD: {{ .Values.sideCar.env.dataStore.password | quote }}
+  DATA_STORE_DBTYPE: {{ .Values.sideCar.env.dataStore.dbType | quote }}
+  DATA_STORE_SCHEMA: {{ .Values.sideCar.env.dataStore.schema | quote }}
+  DATA_STORE_NAME: {{ .Values.sideCar.env.dataStore.name | quote }}
+  DATA_STORE_SSL: {{ .Values.sideCar.env.dataStore.ssl | quote }}
+  POLYGON_PARTS_WORKSPACE_NAME: {{ .Values.sideCar.env.polygonPartsWorkspaceName | quote }}
+  MAX_FEATURES: {{ .Values.sideCar.env.layer.maxFeatures | quote }}
+  NUM_DECIMALS: {{ .Values.sideCar.env.layer.numDecimals | quote }}
+  LAYER_TITLE_NAME: {{ .Values.sideCar.env.layer.titleName | quote }}
