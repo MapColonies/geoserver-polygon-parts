@@ -3,6 +3,12 @@ import { strictEqual as assertEqual, ok as assertOk } from "assert";
 import fs from "fs";
 import env from "env-var";
 import "dotenv/config";
+import jsLogger from "@map-colonies/js-logger";
+
+const logger = jsLogger.default({
+  level: env.get("LOG_LEVEL").default("info").asString(),
+  prettyPrint: env.get("LOG_PRETTY").default("false").asBool(),
+});
 
 const GEOSERVER_USER = env.get("GEOSERVER_USER").default("admin").asString();
 const GEOSERVER_PASS = env
@@ -56,9 +62,9 @@ while (true) {
         Authorization: "Basic " + btoa(GEOSERVER_USER + ":" + GEOSERVER_PASS),
       },
     });
-    console.log(
-      `Got response from geoserver with status code: ${responseFromGs.status}`
-    );
+    logger.info({
+      msg: `Got response from geoserver with status code: ${responseFromGs.status}`,
+    });
     assertOk(responseFromGs.status === 200);
     break;
   } catch (error) {
@@ -85,13 +91,14 @@ const deleteWorkspaceResp = await zx.fetch(
   }
 );
 
-console.log(await deleteWorkspaceResp.text());
+logger.debug({ msg: await deleteWorkspaceResp.text() });
+
 assertOk(
   deleteWorkspaceResp.status === 200 || deleteWorkspaceResp.status === 404
 );
-console.log(
-  `1. Complete validate & clean (if exists) workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${deleteWorkspaceResp.status}\n`
-);
+logger.info({
+  msg: `1. Complete validate & clean (if exists) workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${deleteWorkspaceResp.status}`,
+});
 
 await zx.sleep(1000);
 
@@ -113,11 +120,11 @@ const createWorkspaceResp = await zx.fetch(WORKSPACE_API_URL, {
   },
 });
 
-console.log(await createWorkspaceResp.text());
+logger.debug({ msg: await createWorkspaceResp.text() });
 assertEqual(createWorkspaceResp.status, 201);
-console.log(
-  `2. Complete creation workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${createWorkspaceResp.status}\n`
-);
+logger.info({
+  msg: `2. Complete creation workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${createWorkspaceResp.status}`,
+});
 
 await zx.sleep(1000);
 
@@ -174,11 +181,12 @@ const createDataStoreResp = await zx.fetch(DATA_STORE_API_URL, {
     "Content-Type": "application/json",
   },
 });
-console.log(await createDataStoreResp.text());
+
+logger.debug({ msg: await createDataStoreResp.text() });
 assertEqual(createDataStoreResp.status, 201);
-console.log(
-  `3. Complete creation data-store ${DATA_STORE_NAME} with status code: ${createWorkspaceResp.status}\n`
-);
+logger.info({
+  msg: `3. Complete creation data-store ${DATA_STORE_NAME} with status code: ${createWorkspaceResp.status}`,
+});
 
 await zx.sleep(1000);
 
@@ -200,10 +208,10 @@ const createLayerResp = await zx.fetch(FEATURE_TYPES_API_URL, {
   },
 });
 
-console.log(await createLayerResp.text());
+logger.debug({ msg: await createLayerResp.text() });
 assertEqual(createLayerResp.status, 201);
-console.log(
-  `4. Complete creation layer ${LAYER_TITLE_NAME} with status code: ${createWorkspaceResp.status}\n`
-);
+logger.info({
+  msg: `4. Complete creation layer ${LAYER_TITLE_NAME} with status code: ${createWorkspaceResp.status}`,
+});
 
 setInterval(() => {}, 1000000);

@@ -5,6 +5,8 @@ metadata:
   labels:
 {{ include "geoserver.labels" . | indent 4}}
 data:
+  LOG_LEVEL: {{ .Values.sideCar.env.logLevel | quote }}
+  LOG_PRETTY: {{ .Values.sideCar.env.logPretty | quote }}
   DATA_DIR_PATH: {{ .Values.geoserverDataDir | quote }}
   UPDATE_INTERVAL: {{ .Values.updateInterval | default 120000 | quote }}
   INITIAL_MEMORY: {{ .Values.initialMemory | default "128M" | quote }}
@@ -29,4 +31,5 @@ data:
   MAX_FEATURES: {{ .Values.sideCar.env.layer.maxFeatures | quote }}
   NUM_DECIMALS: {{ .Values.sideCar.env.layer.numDecimals | quote }}
   LAYER_TITLE_NAME: {{ .Values.sideCar.env.layer.titleName | quote }}
+  PGAPPNAME: {{ $chartName }}
   
