@@ -1,3 +1,4 @@
+{{- $chartName := include "geoserver.name" . -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:

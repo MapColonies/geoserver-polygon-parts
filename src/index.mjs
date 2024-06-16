@@ -5,6 +5,9 @@ import env from "env-var";
 import "dotenv/config";
 import jsLogger from "@map-colonies/js-logger";
 
+// *******************************************************************
+// *************** initialization of environ variables ***************
+// *******************************************************************
 const logger = jsLogger.default({
   level: env.get("LOG_LEVEL").default("info").asString(),
   prettyPrint: env.get("LOG_PRETTY").default("false").asBool(),
@@ -53,165 +56,202 @@ const LAYER_TITLE_NAME = env
   .default("polygon_parts")
   .asString();
 
-// will check if geoserver is up before running configuration
-while (true) {
-  try {
-    const responseFromGs = await zx.fetch(`${GEOSERVER_BASE_URL}`, {
-      method: "GET",
-      headers: {
-        Authorization: "Basic " + btoa(GEOSERVER_USER + ":" + GEOSERVER_PASS),
-      },
-    });
-    logger.info({
-      msg: `Got response from geoserver with status code: ${responseFromGs.status}`,
-    });
-    assertOk(responseFromGs.status === 200);
-    break;
-  } catch (error) {
-    console.log(
-      `Failed connect to geoserver with error ${error}, will retry again`
-    );
-    await zx.sleep(5000);
+// *******************************************************************
+
+// Loop until validate geoserver is up
+await checkGeoserverIsUp();
+
+// Stage 1
+// This stage will send api request to delete workspace if already exists
+await deleteWorkspaceIfExists();
+
+// Stage 2
+// This stage will send api request to create workspace
+await createWorkspace();
+
+// Stage 3
+// This stage will send api request to create data-store (connection to pg)
+await createPgDatastore();
+
+// Stage 4
+// This stage will send api request to create wfs layer feature
+await createWfsLayer();
+
+
+// Complete generating env, will loop as void mode
+logger.info({msg: `Env ready: Complete generating new WFS layer: ${LAYER_TITLE_NAME}`})
+setInterval(() => {}, 1000000);
+
+
+
+/**
+ * This function will check periodically till detect that geoserver is up and than exit the method
+ */
+async function checkGeoserverIsUp() {
+  while (true) {
+    try {
+      const responseFromGs = await zx.fetch(`${GEOSERVER_BASE_URL}`, {
+        method: "GET",
+        headers: {
+          Authorization: "Basic " + btoa(GEOSERVER_USER + ":" + GEOSERVER_PASS),
+        },
+      });
+      logger.info({
+        msg: `Got response from geoserver with status code: ${responseFromGs.status}`,
+      });
+      assertOk(responseFromGs.status === 200);
+      break;
+    } catch (error) {
+      logger.warn({
+        msg: `Failed connect to geoserver with error ${error}, will retry again`,
+      });
+      await zx.sleep(5000);
+    }
   }
 }
 
 /**
- * 1. This stage will send api request to delete workspace if already exists
+ * Send api to delete configured geoserver workspace - do nothing if not exists
  */
-const deleteApiParams = new URLSearchParams();
-deleteApiParams.append("recurse", true);
+async function deleteWorkspaceIfExists() {
+  const deleteApiParams = new URLSearchParams();
+  deleteApiParams.append("recurse", true);
 
-const deleteWorkspaceResp = await zx.fetch(
-  `${WORKSPACE_API_URL}/${POLYGON_PARTS_WORKSPACE_NAME}?` + deleteApiParams,
-  {
-    method: "DELETE",
+  const deleteWorkspaceResp = await zx.fetch(
+    `${WORKSPACE_API_URL}/${POLYGON_PARTS_WORKSPACE_NAME}?` + deleteApiParams,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: "Basic " + btoa(GEOSERVER_USER + ":" + GEOSERVER_PASS),
+      },
+    }
+  );
+
+  logger.debug({ msg: await deleteWorkspaceResp.text() });
+
+  assertOk(
+    deleteWorkspaceResp.status === 200 || deleteWorkspaceResp.status === 404
+  );
+  logger.info({
+    msg: `1. Complete validate & clean (if exists) workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${deleteWorkspaceResp.status}`,
+  });
+
+  await zx.sleep(1000);
+}
+
+/**
+ * Send api request to create new workspace
+ */
+async function createWorkspace() {
+  const polygonPartWorkspaceBody = {
+    workspace: {
+      name: POLYGON_PARTS_WORKSPACE_NAME,
+    },
+  };
+
+  const createWorkspaceResp = await zx.fetch(WORKSPACE_API_URL, {
+    method: "POST",
+    body: JSON.stringify(polygonPartWorkspaceBody),
     headers: {
       Authorization: "Basic " + btoa(GEOSERVER_USER + ":" + GEOSERVER_PASS),
+      "Content-Type": "application/json",
     },
-  }
-);
+  });
 
-logger.debug({ msg: await deleteWorkspaceResp.text() });
+  logger.debug({ msg: await createWorkspaceResp.text() });
+  assertEqual(createWorkspaceResp.status, 201);
+  logger.info({
+    msg: `2. Complete creation workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${createWorkspaceResp.status}`,
+  });
 
-assertOk(
-  deleteWorkspaceResp.status === 200 || deleteWorkspaceResp.status === 404
-);
-logger.info({
-  msg: `1. Complete validate & clean (if exists) workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${deleteWorkspaceResp.status}`,
-});
-
-await zx.sleep(1000);
+  await zx.sleep(1000);
+}
 
 /**
- * 2. This stage will send api request to create workspace
+ * Send api request to connect and create db connection by datastore of postgis type
  */
-const polygonPartWorkspaceBody = {
-  workspace: {
-    name: POLYGON_PARTS_WORKSPACE_NAME,
-  },
-};
-
-const createWorkspaceResp = await zx.fetch(WORKSPACE_API_URL, {
-  method: "POST",
-  body: JSON.stringify(polygonPartWorkspaceBody),
-  headers: {
-    Authorization: "Basic " + btoa(GEOSERVER_USER + ":" + GEOSERVER_PASS),
-    "Content-Type": "application/json",
-  },
-});
-
-logger.debug({ msg: await createWorkspaceResp.text() });
-assertEqual(createWorkspaceResp.status, 201);
-logger.info({
-  msg: `2. Complete creation workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${createWorkspaceResp.status}`,
-});
-
-await zx.sleep(1000);
-
-/**
- * 3. This stage will send api request to create data-store (connection to pg)
- */
-const dataStoreCreationBody = {
-  dataStore: {
-    name: DATA_STORE_NAME,
-    description: "This store connect to polygon parts db",
-    connectionParameters: {
-      entry: [
-        { "@key": "host", $: DATA_STORE_CREDENTIALS.host },
-        { "@key": "port", $: DATA_STORE_CREDENTIALS.port },
-        { "@key": "database", $: DATA_STORE_CREDENTIALS.database },
-        { "@key": "user", $: DATA_STORE_CREDENTIALS.user },
-        { "@key": "passwd", $: DATA_STORE_CREDENTIALS.password },
-        { "@key": "dbtype", $: DATA_STORE_CREDENTIALS.dbtype },
-        { "@key": "schema", $: DATA_STORE_CREDENTIALS.schema },
-        { "@key": "Evictor run periodicity", $: "300" },
-        { "@key": "Max open prepared statements", $: "50" },
-        { "@key": "encode functions", $: "true" },
-        { "@key": "Batch insert size", $: "1" },
-        { "@key": "preparedStatements", $: "false" },
-        { "@key": "Loose bbox", $: "true" },
-        { "@key": "SSL mode", $: DATA_STORE_CREDENTIALS.ssl },
-        { "@key": "Estimated extends", $: "true" },
-        { "@key": "fetch size", $: "1000" },
-        { "@key": "Expose primary keys", $: "false" },
-        { "@key": "validate connections", $: "true" },
-        { "@key": "Support on the fly geometry simplification", $: "true" },
-        { "@key": "Connection timeout", $: "20" },
-        { "@key": "create database", $: "false" },
-        {
-          "@key": "Method used to simplify geometries",
-          $: "PRESERVETOPOLOGY",
-        },
-        { "@key": "min connections", $: "1" },
-        { "@key": "max connections", $: "10" },
-        { "@key": "Evictor tests per run", $: "3" },
-        { "@key": "Test while idle", $: "true" },
-        { "@key": "Max connection idle time", $: "300" },
-      ],
+async function createPgDatastore() {
+  const dataStoreCreationBody = {
+    dataStore: {
+      name: DATA_STORE_NAME,
+      description: "This store connect to polygon parts db",
+      connectionParameters: {
+        entry: [
+          { "@key": "host", $: DATA_STORE_CREDENTIALS.host },
+          { "@key": "port", $: DATA_STORE_CREDENTIALS.port },
+          { "@key": "database", $: DATA_STORE_CREDENTIALS.database },
+          { "@key": "user", $: DATA_STORE_CREDENTIALS.user },
+          { "@key": "passwd", $: DATA_STORE_CREDENTIALS.password },
+          { "@key": "dbtype", $: DATA_STORE_CREDENTIALS.dbtype },
+          { "@key": "schema", $: DATA_STORE_CREDENTIALS.schema },
+          { "@key": "Evictor run periodicity", $: "300" },
+          { "@key": "Max open prepared statements", $: "50" },
+          { "@key": "encode functions", $: "true" },
+          { "@key": "Batch insert size", $: "1" },
+          { "@key": "preparedStatements", $: "false" },
+          { "@key": "Loose bbox", $: "true" },
+          { "@key": "SSL mode", $: DATA_STORE_CREDENTIALS.ssl },
+          { "@key": "Estimated extends", $: "true" },
+          { "@key": "fetch size", $: "1000" },
+          { "@key": "Expose primary keys", $: "false" },
+          { "@key": "validate connections", $: "true" },
+          { "@key": "Support on the fly geometry simplification", $: "true" },
+          { "@key": "Connection timeout", $: "20" },
+          { "@key": "create database", $: "false" },
+          {
+            "@key": "Method used to simplify geometries",
+            $: "PRESERVETOPOLOGY",
+          },
+          { "@key": "min connections", $: "1" },
+          { "@key": "max connections", $: "10" },
+          { "@key": "Evictor tests per run", $: "3" },
+          { "@key": "Test while idle", $: "true" },
+          { "@key": "Max connection idle time", $: "300" },
+        ],
+      },
     },
-  },
-};
+  };
 
-const createDataStoreResp = await zx.fetch(DATA_STORE_API_URL, {
-  method: "POST",
-  body: JSON.stringify(dataStoreCreationBody),
+  const createDataStoreResp = await zx.fetch(DATA_STORE_API_URL, {
+    method: "POST",
+    body: JSON.stringify(dataStoreCreationBody),
 
-  headers: {
-    Authorization: "Basic " + btoa(GEOSERVER_USER + ":" + GEOSERVER_PASS),
-    "Content-Type": "application/json",
-  },
-});
+    headers: {
+      Authorization: "Basic " + btoa(GEOSERVER_USER + ":" + GEOSERVER_PASS),
+      "Content-Type": "application/json",
+    },
+  });
 
-logger.debug({ msg: await createDataStoreResp.text() });
-assertEqual(createDataStoreResp.status, 201);
-logger.info({
-  msg: `3. Complete creation data-store ${DATA_STORE_NAME} with status code: ${createWorkspaceResp.status}`,
-});
+  logger.debug({ msg: await createDataStoreResp.text() });
+  assertEqual(createDataStoreResp.status, 201);
+  logger.info({
+    msg: `3. Complete creation data-store ${DATA_STORE_NAME} with status code: ${createDataStoreResp.status}`,
+  });
 
-await zx.sleep(1000);
+  await zx.sleep(1000);
+}
 
 /**
- * 4. This stage will send api request to create wfs layer feature
+ * Send api request with layer json configuration and create new WFS layer according dbstore
  */
+async function createWfsLayer() {
+  const layerBody = JSON.parse(fs.readFileSync(LAYER_BODY_JSON));
+  layerBody["featureType"]["maxFeatures"] = MAX_FEATURES;
+  layerBody["featureType"]["numDecimals"] = NUM_DECIMALS;
+  layerBody["featureType"]["title"] = LAYER_TITLE_NAME;
 
-const layerBody = JSON.parse(fs.readFileSync(LAYER_BODY_JSON));
-layerBody["featureType"]["maxFeatures"] = MAX_FEATURES;
-layerBody["featureType"]["numDecimals"] = NUM_DECIMALS;
-layerBody["featureType"]["title"] = LAYER_TITLE_NAME;
+  const createLayerResp = await zx.fetch(FEATURE_TYPES_API_URL, {
+    method: "POST",
+    body: JSON.stringify(layerBody),
+    headers: {
+      Authorization: "Basic " + btoa(GEOSERVER_USER + ":" + GEOSERVER_PASS),
+      "Content-Type": "application/json",
+    },
+  });
 
-const createLayerResp = await zx.fetch(FEATURE_TYPES_API_URL, {
-  method: "POST",
-  body: JSON.stringify(layerBody),
-  headers: {
-    Authorization: "Basic " + btoa(GEOSERVER_USER + ":" + GEOSERVER_PASS),
-    "Content-Type": "application/json",
-  },
-});
-
-logger.debug({ msg: await createLayerResp.text() });
-assertEqual(createLayerResp.status, 201);
-logger.info({
-  msg: `4. Complete creation layer ${LAYER_TITLE_NAME} with status code: ${createWorkspaceResp.status}`,
-});
-
-setInterval(() => {}, 1000000);
+  logger.debug({ msg: await createLayerResp.text() });
+  assertEqual(createLayerResp.status, 201);
+  logger.info({
+    msg: `4. Complete creation layer ${LAYER_TITLE_NAME} with status code: ${createLayerResp.status}`,
+  });
+}
