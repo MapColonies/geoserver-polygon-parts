@@ -6,17 +6,16 @@ global:
   authentication:
     jwtPublicKeySecretName: map-colonies-jwks
 
-cloudProvider:
-  dockerRegistryUrl: acrarolibotnonprod.azurecr.io
+cloudProvider: {}
 
 ### Useful for umbrella deployments in cases which no need geoserver serving ###
 enabled: true
 
 image:
   geoserverRepository: geoserver-os
-  geoserverTag: "v1.0.1-2.21.0-rc3"
+  geoserverTag: "latest"
   sidecarRepository: pp-geoserver-side-car
-  sidecarTag: "v1.0.0"
+  sidecarTag: "latest"
 
 updateInterval: 10000
 
@@ -55,7 +54,7 @@ extraGeoserverEnv: |
   - name: JAVA_OPTS
     value: '-DALLOW_ENV_PARAMETRIZATION=true'
   - name: PROXY_BASE_URL
-    value: /geoserver
+    value: https://gs-nginx-route-raster-dev.apps.j1lk3njp.eastus.aroapp.io/api/raster/v1
 #  - name: KEY_2
 #    value: "VALUE_2"
 
@@ -139,7 +138,7 @@ sideCar:
 
 nginx:
   enabled: true
-  replicaCount: 2
+  replicaCount: 1
   fullnameOverride: ""
   image:
     repository: nginx-otel-unprivileged
@@ -153,7 +152,7 @@ nginx:
   authorization:
     enabled: true
     domain: 'raster'
-    url: http://opa-dev-opa-service.infra-services/v1/data/http/authz/decision
+    url: http://opa-service.infra-services/v1/data/http/authz/decision
 
   extraVolumes:
     - name: nginx-config
@@ -180,8 +179,10 @@ nginx:
 
   route:
     enabled: true
-    path: /geoserver
-    host: 
+    routesMapping:
+      - host:
+        path: /api/raster/v1
+    rewriteTarget: "/geoserver"
     timeout:
       enabled: false # defaults to 30s by openshift
       duration: 60s # supported units (us, ms, s, m, h, d)
