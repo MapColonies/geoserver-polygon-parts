@@ -1,7 +1,7 @@
 # Initial layer configuration with Side-car
 [home](../README.md)
 * This Side-car's goal is to run over new geoserver and auto-generate layer that will serve entire suite of polygon parts features via WFS.
-* It watch geoserver REST-API endpoint availability and once detect so, process will be start.
+* It Watches geoserver REST-API endpoint availability and once detect so, process will be start.
 * Implemented with Nodejs and use fetch requests on several geoserver's rest APIs [/rest](https://docs.geoserver.org/main/en/user/rest/index.html).
 * Supports Javascript.
 
@@ -12,9 +12,9 @@ await checkGeoserverIsUp();
 ```
 
 > [!CAUTION]
-> The method will run eternally until detect working endpoint of geoserver.
+> The method will run eternally until it detects working geoserver endpoint.
 
-2. First will validate if workspace exists, and remove if exists.
+2. Validates that workspace exists and remove if already exists.
 ```javascript
 await deleteWorkspaceIfExists();
 ```

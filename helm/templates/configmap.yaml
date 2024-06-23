@@ -33,4 +33,3 @@ data:
   NUM_DECIMALS: {{ .Values.sideCar.env.layer.numDecimals | quote }}
   LAYER_TITLE_NAME: {{ .Values.sideCar.env.layer.titleName | quote }}
   PGAPPNAME: {{ $chartName }}
-  

@@ -54,7 +54,7 @@ extraGeoserverEnv: |
   - name: JAVA_OPTS
     value: '-DALLOW_ENV_PARAMETRIZATION=true'
   - name: PROXY_BASE_URL
-    value: https://gs-nginx-route-raster-dev.apps.j1lk3njp.eastus.aroapp.io/api/raster/v1
+    value: /geoserver 
 #  - name: KEY_2
 #    value: "VALUE_2"
 
