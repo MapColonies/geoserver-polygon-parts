@@ -7,6 +7,7 @@
 
 > [!NOTE]
 > On current version it support hard-coded only file 'polygonPartSpec.json'.
+> [!NOTE]
 > Not supports xml format on current version.
 
 ## Main Structures
