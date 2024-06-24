@@ -1,5 +1,5 @@
 # Helm suite for complete geoserver - polygon parts 
-[home](../README.md)
+[Home](../README.md)
 * The helm provides ready to use polygon parts serving by WFS protocol
 * The initialization use side car to prepare the geoserver to be ready to uses with all relevant data
 * Based on [kartoza/helm for geoserver](https://github.com/kartoza/charts/tree/develop/charts/geoserver/v0.3.3)

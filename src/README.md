@@ -1,5 +1,5 @@
 # Initial layer configuration with Side-car
-[home](../README.md)
+[Home](../README.md)
 * This Side-car's goal is to run over new geoserver and auto-generate layer that will serve entire suite of polygon parts features via WFS.
 * It Watches geoserver REST-API endpoint availability and once detect so, process will be start.
 * Implemented with Nodejs and use fetch requests on several geoserver's rest APIs [/rest](https://docs.geoserver.org/main/en/user/rest/index.html).

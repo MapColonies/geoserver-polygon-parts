@@ -1,5 +1,5 @@
 # Layer static spec file
-[home](../README.md)
+[Home](../README.md)
 * Artifact holds layer spec and is provided on layer creation as json body.
 * On current version it support hard-coded only file 'polygonPartSpec.json'.
 * Used for featurestypes rest APIs [/workspaces](https://docs.geoserver.org/latest/en/api/#1.0.0/featuretypes.yaml).
