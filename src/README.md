@@ -18,34 +18,6 @@ stateDiagram-v2
   createWfsLayer --> [*] 
 ```
 
-1. Start only if detect available geoserver endpoint.
-```javascript
-await checkGeoserverIsUp();
-```
-
-> [!CAUTION]
-> The method will run eternally until it detects working geoserver endpoint.
-
-2. Validates that workspace exists and remove if already exists.
-```javascript
-await deleteWorkspaceIfExists();
-```
-
-3. Create new [Workspace](https://docs.geoserver.org/stable/en/user/data/webadmin/workspaces.html) with configured name.
-```javascript
-await createWorkspace();
-```
-
-
-4. Create new [Datastore](https://docs.geoserver.org/stable/en/user/data/app-schema/data-stores.html) under previous created workspace.
-```javascript
-await createPgDatastore();
-```
-
-5. Create new [Layer](https://docs.geoserver.org/latest/en/user/data/webadmin/layers.html) reflected from previous created datastore.
-```javascript
-await createWfsLayer();
-```
 > [!IMPORTANT]
 > Layer properties use static [artifact json file](../artifacts/README.md) that include relevant properties, attributes, mappings and etc..
 
