@@ -6,6 +6,18 @@
 * Supports Javascript.
 
 ## Main processes
+
+```mermaid
+stateDiagram-v2
+  [*] --> checkGeoserverIsUp
+  checkGeoserverIsUp --> checkGeoserverIsUp
+  checkGeoserverIsUp --> deleteWorkspaceIfExists
+  deleteWorkspaceIfExists --> createWorkspace
+  createWorkspace --> createPgDatastore
+  createPgDatastore --> createWfsLayer
+  createWfsLayer --> [*] 
+```
+
 1. Start only if detect available geoserver endpoint.
 ```javascript
 await checkGeoserverIsUp();
@@ -32,7 +44,7 @@ await createPgDatastore();
 
 5. Create new [Layer](https://docs.geoserver.org/latest/en/user/data/webadmin/layers.html) reflected from previous created datastore.
 ```javascript
-await createPgDatastore();
+await createWfsLayer();
 ```
 > [!IMPORTANT]
 > Layer properties use static [artifact json file](../artifacts/README.md) that include relevant properties, attributes, mappings and etc..
