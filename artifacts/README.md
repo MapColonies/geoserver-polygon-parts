@@ -6,10 +6,10 @@
 * Not supports xml format on current version.
 
 > [!NOTE]
-> On current version it support hard-coded only file 'polygonPartSpec.json'.
+> Current version supports only a hard-coded file named 'polygonPartSpec.json'.
 
 > [!NOTE]
-> Not supports xml format on current version.
+> Current version doesn't supports xml format.
 
 ## Main Structures
 1. Define the name of the layer.

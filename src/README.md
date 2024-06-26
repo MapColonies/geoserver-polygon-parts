@@ -15,7 +15,7 @@ stateDiagram-v2
   deleteWorkspaceIfExists --> createWorkspace
   createWorkspace --> createPgDatastore
   createPgDatastore --> createWfsLayer
-  createWfsLayer --> [*] 
+  createWfsLayer --> [*]
 ```
 
 > [!IMPORTANT]

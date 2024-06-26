@@ -8,7 +8,7 @@
 ## Main Features
 
 ### Layer Auto-Config 
-* On deploy, once geoserver api is up, side-car will run and configured the WFS layer definitions.
+* On deploy, once geoserver api is up, side-car will run and configure the WFS layer definitions.
 * Readiness will be valid when it detects the featureDescribe of the polygon parts layer.
 
 ### B2B Support
