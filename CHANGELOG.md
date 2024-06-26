@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.1](https://github.com/MapColonies/geoserver-polygon-parts/compare/v1.0.0...v1.0.1) (2024-06-26)
+
+
+### Bug Fixes
+
+* change naming of release products ([#2](https://github.com/MapColonies/geoserver-polygon-parts/issues/2)) ([608543d](https://github.com/MapColonies/geoserver-polygon-parts/commit/608543da6afff339b566db3c9a145eb8b278dcd7))
+
 ## 1.0.0 (2024-06-26)
 
 
