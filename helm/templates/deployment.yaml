@@ -1,0 +1,141 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "geoserver.fullname" . }}
+  labels:
+{{ include "geoserver.labels" . | indent 4 }}
+  {{- with .Values.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount}}
+  selector:
+    matchLabels:
+{{ include "geoserver.selectorLabels" . | indent 6}}
+  template:
+    metadata:
+      name: {{ template "geoserver.fullname" . }}
+      labels:
+{{ include "geoserver.labels" . | indent 8}}
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- (tpl . $) | indent 8 }}
+        {{- end }}
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.global.pullSecretName }}
+      containers:
+      - name: {{ template "geoserver.fullname" . }}
+        image: {{ include "geoserver.image" . }}
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        {{- if .Values.resources.enabled }}
+        resources:
+          requests:
+            memory: {{ .Values.resources.requests.memory }}
+            cpu: {{ .Values.resources.requests.cpu }}
+          limits:
+            memory: {{ .Values.resources.limits.memory }}
+            cpu: {{ .Values.resources.limits.cpu }}
+        {{- end }}
+        env:
+          {{- if .Values.geoserverDataDir }}
+          - name: GEOSERVER_DATA_DIR
+            value: {{ .Values.geoserverDataDir | quote }}
+          {{- end }}
+          - name: GEOSERVER_ADMIN_USER
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "geoserver.secretName" . }}
+                key: GEOSERVER_USER
+          - name: GEOSERVER_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "geoserver.secretName" . }}
+                key: GEOSERVER_PASS
+          {{- if .Values.pgSslAuth.enabled }}
+          - name: POSTGRES_ENABLE_SSL_AUTH
+            value: 'true'
+          - name: POSTGRES_CERTS_MOUNT_PATH
+            value: {{ .Values.pgSslAuth.mountPath }}
+          {{- end }}
+          {{- if .Values.rootCerts.enabled }}
+          - name: ADD_ROOT_CERTS
+            value: 'true'
+          - name: ROOT_CERTS_PATH
+            value: {{ .Values.rootCerts.mountPath }}
+          {{- else }}
+          - name: ADD_ROOT_CERTS
+            value: 'false'
+          {{- end }}
+          {{- with .Values.extraGeoserverEnv }}
+          {{- tpl . $ | nindent 10 }}
+          {{- end }}
+        ports:
+          - name: http-geoserver
+            containerPort: 8080
+        startupProbe:
+          httpGet:
+            path: /geoserver
+            port: http-geoserver
+          failureThreshold: 30
+          periodSeconds: 10
+          initialDelaySeconds: 60
+        livenessProbe:
+          httpGet:
+            path: /geoserver
+            port: http-geoserver
+            scheme: HTTP
+          failureThreshold: 3
+          successThreshold: 1
+          periodSeconds: 10
+          initialDelaySeconds: 30
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.readiness.path }}
+            port: http-geoserver
+            scheme: HTTP
+          failureThreshold: 3
+          successThreshold: 1
+          timeoutSeconds: 5
+          periodSeconds: 10
+          initialDelaySeconds: 90
+        volumeMounts:
+        - mountPath: {{ .Values.geoserverDataDir }}
+          name: data-dir-volume
+        {{- if .Values.pgSslAuth.enabled }}
+        - name: cert-conf
+          mountPath: {{ .Values.pgSslAuth.mountPath }}
+        {{- end }}
+        {{- if .Values.rootCerts.enabled }}
+        - name: root-cert-conf
+          mountPath: {{ .Values.rootCerts.mountPath }}
+        {{- end }}
+      - name: {{ template "geoserver.fullname" . }}-config
+        image: {{ include "geoserver.sidecarImage" . }}
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        resources: {{- toYaml .Values.sidecarResources | nindent 10 }}
+        env:
+          {{- with .Values.extraSidecarEnv }}
+          {{- tpl . $ | nindent 10 }}
+          {{- end }}
+        envFrom:
+          - secretRef:
+              name: {{ template "geoserver.secretName" . }}
+          - configMapRef:
+              name: {{ template "geoserver.fullname" . }}
+        volumeMounts:
+        - mountPath: {{ .Values.geoserverDataDir }}
+          name: data-dir-volume
+      volumes:
+      - name: data-dir-volume
+        emptyDir: {}
+      {{- if .Values.pgSslAuth.enabled }}
+      - name: cert-conf
+        secret:
+          secretName: {{ .Values.pgSslAuth.secretName }}
+      {{- end }}
+      {{- if .Values.rootCerts.enabled }}
+      - name: root-cert-conf
+        secret:
+          secretName: {{ .Values.rootCerts.secretName }}
+      {{- end }}
