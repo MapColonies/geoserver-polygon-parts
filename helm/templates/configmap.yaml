@@ -21,7 +21,7 @@ data:
   GEOSERVER_PASS: {{ .Values.geoserverPassword | quote }}
   GEOSERVER_DATA_DIR: {{ .Values.geoserverDataDir | quote }}
   GEOSERVER_BASE_URL: {{ .Values.sideCar.env.geoserverBaseUrl | quote }}
-  DATA_STORE_HOST: {{ $db.host| quote }}
+  DATA_STORE_HOST: {{ $db.host | quote }}
   DATA_STORE_PORT: {{ $db.port | quote }}
   DATA_STORE_DATABASE: {{ $db.name| quote }}
   DATA_STORE_USER: {{ .Values.sideCar.env.dataStore.user | quote }}
