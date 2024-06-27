@@ -23,7 +23,7 @@ data:
   GEOSERVER_BASE_URL: {{ .Values.sideCar.env.geoserverBaseUrl | quote }}
   DATA_STORE_HOST: {{ $db.host | quote }}
   DATA_STORE_PORT: {{ $db.port | quote }}
-  DATA_STORE_DATABASE: {{ $db.name| quote }}
+  DATA_STORE_DATABASE: {{ $db.name | quote }}
   DATA_STORE_USER: {{ .Values.sideCar.env.dataStore.user | quote }}
   DATA_STORE_PASSWORD: {{ .Values.sideCar.env.dataStore.password | quote }}
   DATA_STORE_DBTYPE: {{ .Values.sideCar.env.dataStore.dbType | quote }}
