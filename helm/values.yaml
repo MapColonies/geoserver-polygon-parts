@@ -5,6 +5,10 @@ global:
   environment: ''
   authentication:
     jwtPublicKeySecretName: map-colonies-jwks
+  db:
+    host: ""
+    name: ""
+    port: 5432
 
 cloudProvider: {}
 
@@ -36,6 +40,11 @@ maxMemory: "756M"
 
 readiness:
   path: "/geoserver/polygon_parts/ows?service=wfs&request=DescribeFeatureType" # change it according to workspace name changing
+
+db:
+  host: ""
+  name: ""
+  port: 5432
 
 rootCerts:
   enabled: false
@@ -120,9 +129,6 @@ sideCar:
       CERT_FILE_LOCATION: /opt/certs/cert/cert.pem
   
     dataStore:
-      host: "localhost"
-      port: "5432"
-      database: "postgres"
       user: "postgres"
       password: "postgres"
       dbType: "postgis"
