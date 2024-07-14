@@ -61,6 +61,22 @@
           "source": "record_id"
         },
         {
+          "name": "productId",
+          "minOccurs": 1,
+          "maxOccurs": 1,
+          "nillable": false,
+          "binding": "java.lang.String",
+          "source": "product_id"
+        },
+        {
+          "name": "producType",
+          "minOccurs": 1,
+          "maxOccurs": 1,
+          "nillable": false,
+          "binding": "java.lang.String",
+          "source": "product_type"
+        },
+        {
           "name": "id",
           "minOccurs": 0,
           "maxOccurs": 1,
