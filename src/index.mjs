@@ -33,7 +33,6 @@ const POLYGON_PARTS_WORKSPACE_NAME = env.get('POLYGON_PARTS_WORKSPACE_NAME').def
 
 const WORKSPACE_API_URL = `${GEOSERVER_BASE_URL}/rest/workspaces`;
 const GLOBAL_WFS_SETTING_API_URL = `${GEOSERVER_BASE_URL}/rest/services/wfs/settings`;
-
 const DATA_STORE_API_URL = `${WORKSPACE_API_URL}/${POLYGON_PARTS_WORKSPACE_NAME}/datastores`;
 const DATA_STORE_NAME = env.get('DATA_STORE_NAME').default('polygon_parts').asString();
 
@@ -277,6 +276,32 @@ async function setWfsAsBasic() {
     },
   });
   
+  logger.debug({ msg: await setWfsResp.text() });
+  assertEqual(setWfsResp.status, 200);
+  logger.info({
+    msg: `5. Changed WFS service level into 'BASIC' - read only mode with status code: ${setWfsResp.status}`,
+  });
+}
+
+/**
+ * Send api request for global settings - restrict WFS protocol read-only (BASIC)
+ */
+async function setWfsAsBasic() {
+  const setBody = {
+    wfs: {
+      serviceLevel: 'BASIC',
+    },
+  };
+
+  const setWfsResp = await zx.fetch(GLOBAL_WFS_SETTING_API_URL, {
+    method: 'PUT',
+    body: JSON.stringify(setBody),
+    headers: {
+      Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
+      'Content-Type': 'application/json',
+    },
+  });
+
   logger.debug({ msg: await setWfsResp.text() });
   assertEqual(setWfsResp.status, 200);
   logger.info({
