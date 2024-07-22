@@ -222,14 +222,14 @@ async function createWfsLayer() {
   layerBodyBlueMarble['featureType']['maxFeatures'] = MAX_FEATURES;
   layerBodyBlueMarble['featureType']['numDecimals'] = NUM_DECIMALS;
   layerBodyBlueMarble['featureType']['title'] = 'bluemarble_orthophoto';
-  layerBodyBlueMarble['featureType']['name'] = 'bluemarble_orthophoto_polygon_parts';
+  layerBodyBlueMarble['featureType']['name'] = 'bluemarble_orthophoto';
   layerBodyBlueMarble['featureType']['nativeName'] = 'bluemarble_orthophoto_polygon_parts';
 
   const layerBodyMosaicBase = JSON.parse(fs.readFileSync(LAYER_BODY_JSON));
   layerBodyMosaicBase['featureType']['maxFeatures'] = MAX_FEATURES;
   layerBodyMosaicBase['featureType']['numDecimals'] = NUM_DECIMALS;
   layerBodyMosaicBase['featureType']['title'] = 'ORTHOPHOTO_BEST-OrthophotoBest';
-  layerBodyMosaicBase['featureType']['name'] = 'orthophoto_best_orthophotobest_polygon_parts';
+  layerBodyMosaicBase['featureType']['name'] = 'orthophoto_best_orthophotobest';
   layerBodyMosaicBase['featureType']['nativeName'] = 'orthophoto_best_orthophotobest_polygon_parts';
 
   const layerArr = [layerBodyBlueMarble, layerBodyMosaicBase]

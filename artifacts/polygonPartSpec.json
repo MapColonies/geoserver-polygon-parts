@@ -104,7 +104,7 @@
           "maxOccurs": 1,
           "nillable": false,
           "binding": "java.sql.Timestamp",
-          "source": "ingestion_date_UTC"
+          "source": "ingestion_date_utc"
         },
         {
           "name": "imagingTimeBeginUTC",
@@ -112,7 +112,7 @@
           "maxOccurs": 1,
           "nillable": false,
           "binding": "java.sql.Timestamp",
-          "source": "imaging_time_begin_UTC"
+          "source": "imaging_time_begin_utc"
         },
         {
           "name": "imagingTimeEndUTC",
@@ -120,7 +120,7 @@
           "maxOccurs": 1,
           "nillable": false,
           "binding": "java.sql.Timestamp",
-          "source": "imaging_time_end_UTC"
+          "source": "imaging_time_end_utc"
         },
         {
           "name": "resolutionDegree",
