@@ -78,6 +78,8 @@ async function checkGeoserverIsUp() {
   while (true) {
     try {
       const responseFromGs = await zx.fetch(`${GEOSERVER_BASE_URL}`, {
+
+      // const responseFromGs = await zx.fetch(`${GEOSERVER_BASE_URL}`, {
         method: 'GET',
         headers: {
           Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
@@ -217,21 +219,21 @@ async function createPgDatastore() {
  * Send api request with layer json configuration and create new WFS layer according dbstore
  */
 async function createWfsLayer() {
-  const layerBodyBlueMarble = JSON.parse(fs.readFileSync(LAYER_BODY_JSON));
-  layerBodyBlueMarble['featureType']['maxFeatures'] = MAX_FEATURES;
-  layerBodyBlueMarble['featureType']['numDecimals'] = NUM_DECIMALS;
-  layerBodyBlueMarble['featureType']['title'] = 'bluemarble_orthophoto';
-  layerBodyBlueMarble['featureType']['name'] = 'bluemarble_orthophoto';
-  layerBodyBlueMarble['featureType']['nativeName'] = 'bluemarble_orthophoto_polygon_parts';
+  // const layerBodyBlueMarble = JSON.parse(fs.readFileSync(LAYER_BODY_JSON));
+  // layerBodyBlueMarble['featureType']['maxFeatures'] = MAX_FEATURES;
+  // layerBodyBlueMarble['featureType']['numDecimals'] = NUM_DECIMALS;
+  // layerBodyBlueMarble['featureType']['title'] = 'bluemarble2_orthophoto';
+  // layerBodyBlueMarble['featureType']['name'] = 'bluemarble2_orthophoto';
+  // layerBodyBlueMarble['featureType']['nativeName'] = 'bluemarble2_orthophoto_polygon_parts';
 
   const layerBodyMosaicBase = JSON.parse(fs.readFileSync(LAYER_BODY_JSON));
   layerBodyMosaicBase['featureType']['maxFeatures'] = MAX_FEATURES;
   layerBodyMosaicBase['featureType']['numDecimals'] = NUM_DECIMALS;
   layerBodyMosaicBase['featureType']['title'] = 'ORTHOPHOTO_BEST-OrthophotoBest';
   layerBodyMosaicBase['featureType']['name'] = 'orthophoto_best_orthophotobest';
-  layerBodyMosaicBase['featureType']['nativeName'] = 'orthophoto_best_orthophotobest_polygon_parts';
+  layerBodyMosaicBase['featureType']['nativeName'] = 'orthophoto_best_orthophotobest';
 
-  const layerArr = [layerBodyBlueMarble, layerBodyMosaicBase]
+  const layerArr = [layerBodyMosaicBase]
 
   for (const layerBody of layerArr){
     const createLayerResp = await zx.fetch(FEATURE_TYPES_API_URL, {
@@ -260,28 +262,28 @@ async function createWfsLayer() {
 /**
  * Send api request for global settings - restrict WFS protocol read-only (BASIC)
  */
-async function setWfsAsBasic() {
-  const setBody = {
-    wfs: {
-      serviceLevel: 'BASIC',
-    },
-  };
+// async function setWfsAsBasic() {
+//   const setBody = {
+//     wfs: {
+//       serviceLevel: 'BASIC',
+//     },
+//   };
 
-  const setWfsResp = await zx.fetch(GLOBAL_WFS_SETTING_API_URL, {
-    method: 'PUT',
-    body: JSON.stringify(setBody),
-    headers: {
-      Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
-      'Content-Type': 'application/json',
-    },
-  });
+//   const setWfsResp = await zx.fetch(GLOBAL_WFS_SETTING_API_URL, {
+//     method: 'PUT',
+//     body: JSON.stringify(setBody),
+//     headers: {
+//       Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
+//       'Content-Type': 'application/json',
+//     },
+//   });
   
-  logger.debug({ msg: await setWfsResp.text() });
-  assertEqual(setWfsResp.status, 200);
-  logger.info({
-    msg: `5. Changed WFS service level into 'BASIC' - read only mode with status code: ${setWfsResp.status}`,
-  });
-}
+//   logger.debug({ msg: await setWfsResp.text() });
+//   assertEqual(setWfsResp.status, 200);
+//   logger.info({
+//     msg: `5. Changed WFS service level into 'BASIC' - read only mode with status code: ${setWfsResp.status}`,
+//   });
+// }
 
 /**
  * Send api request for global settings - restrict WFS protocol read-only (BASIC)
