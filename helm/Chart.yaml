@@ -1,5 +1,6 @@
 apiVersion: v2
 name: pp-geoserver
+type: application
 version: 1.0.2
 appVersion: 1.0.2
 description: Chart for geoserver in openshift

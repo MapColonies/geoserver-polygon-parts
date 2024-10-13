@@ -38,9 +38,9 @@ spec:
             cpu: {{ .Values.resources.limits.cpu }}
         {{- end }}
         env:
-          {{- if .Values.geoserverDataDir }}
+          {{- if .Values.dataDir.mountPath }}
           - name: GEOSERVER_DATA_DIR
-            value: {{ .Values.geoserverDataDir | quote }}
+            value: {{ .Values.dataDir.mountPath | quote }}
           {{- end }}
           - name: GEOSERVER_ADMIN_USER
             valueFrom:
@@ -100,8 +100,9 @@ spec:
           periodSeconds: 10
           initialDelaySeconds: 90
         volumeMounts:
-        - mountPath: {{ .Values.geoserverDataDir }}
-          name: data-dir-volume
+        - name: data-dir-volume
+          mountPath: {{ .Values.dataDir.mountPath}}
+          subPath: {{ .Values.dataDir.subPath}}
         {{- if .Values.pgSslAuth.enabled }}
         - name: cert-conf
           mountPath: {{ .Values.pgSslAuth.mountPath }}
@@ -110,25 +111,10 @@ spec:
         - name: root-cert-conf
           mountPath: {{ .Values.rootCerts.mountPath }}
         {{- end }}
-      - name: {{ template "geoserver.fullname" . }}-config
-        image: {{ include "geoserver.sidecarImage" . }}
-        imagePullPolicy: {{ .Values.global.pullPolicy }}
-        resources: {{- toYaml .Values.sidecarResources | nindent 10 }}
-        env:
-          {{- with .Values.extraSidecarEnv }}
-          {{- tpl . $ | nindent 10 }}
-          {{- end }}
-        envFrom:
-          - secretRef:
-              name: {{ template "geoserver.secretName" . }}
-          - configMapRef:
-              name: {{ template "geoserver.fullname" . }}
-        volumeMounts:
-        - mountPath: {{ .Values.geoserverDataDir }}
-          name: data-dir-volume
       volumes:
       - name: data-dir-volume
-        emptyDir: {}
+        persistentVolumeClaim:
+            claimName: {{ .Values.dataDir.nfsName }}
       {{- if .Values.pgSslAuth.enabled }}
       - name: cert-conf
         secret:
