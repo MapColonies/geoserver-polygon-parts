@@ -9,12 +9,7 @@ global:
     host: ""
     name: ""
     port: 5432
-  storage:
-    fs:
-      internalPvc:
-        name: ""
-        mountPath: ""
-        geoserverDataDirSubPath: "" 
+  storage: {}
 
 cloudProvider: {}
 
@@ -45,9 +40,9 @@ maxMemory: "756M"
 storage:
   fs:
     internalPvc:
-      name: internal-pvc-nfs
-      mountPath: /data_dir
-      geoserverDataDirSubPath: geoserver_data_dir
+      name: ""
+      mountPath: ""
+      geoserverDataDirSubPath: ""
 
 readiness:
   path: "/geoserver" # change it according to workspace name changing
