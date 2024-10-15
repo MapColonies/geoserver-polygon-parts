@@ -1,3 +1,5 @@
+{{- $fs := (include "common.fs.merged" .) | fromYaml }}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -38,9 +40,9 @@ spec:
             cpu: {{ .Values.resources.limits.cpu }}
         {{- end }}
         env:
-          {{- if .Values.dataDir.mountPath }}
+          {{- if $fs.internalPvc.mountPath }}
           - name: GEOSERVER_DATA_DIR
-            value: {{ .Values.dataDir.mountPath | quote }}
+            value: {{ $fs.internalPvc.mountPath | quote }}
           {{- end }}
           - name: GEOSERVER_ADMIN_USER
             valueFrom:
@@ -101,8 +103,8 @@ spec:
           initialDelaySeconds: 90
         volumeMounts:
         - name: data-dir-volume
-          mountPath: {{ .Values.dataDir.mountPath}}
-          subPath: {{ .Values.dataDir.subPath}}
+          mountPath: {{ $fs.internalPvc.mountPath}}
+          subPath: {{ $fs.internalPvc.geoserverDataDirSubPath}}
         {{- if .Values.pgSslAuth.enabled }}
         - name: cert-conf
           mountPath: {{ .Values.pgSslAuth.mountPath }}
@@ -114,7 +116,7 @@ spec:
       volumes:
       - name: data-dir-volume
         persistentVolumeClaim:
-            claimName: {{ .Values.dataDir.nfsName }}
+            claimName: {{ $fs.internalPvc.name }}
       {{- if .Values.pgSslAuth.enabled }}
       - name: cert-conf
         secret:

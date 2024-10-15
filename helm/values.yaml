@@ -9,6 +9,7 @@ global:
     host: ""
     name: ""
     port: 5432
+  storage: {}
 
 cloudProvider: {}
 
@@ -36,14 +37,15 @@ geoserverPassword: geoserver
 initialMemory: "128M"
 maxMemory: "756M"
 
-dataDir:
-  nfsName: internal-pvc-nfs
-  subPath: geoserver_data_dir
-  mountPath: /data_dir
-
+storage:
+  fs:
+    internalPvc:
+      name: ""
+      mountPath: ""
+      geoserverDataDirSubPath: ""
 
 readiness:
-  path: "/geoserver/polygon_parts/ows?service=wfs&request=DescribeFeatureType" # change it according to workspace name changing
+  path: "/geoserver" # change it according to workspace name changing
 
 db:
   host: ""
