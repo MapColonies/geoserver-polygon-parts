@@ -52,3 +52,7 @@ Custom definitions
 {{- define "common.db.merged" -}}
 {{- include "common.tplvalues.merge" ( dict "values" ( list .Values.db .Values.global.db ) "context" . ) }}
 {{- end -}}
+
+{{- define "common.fs.merged" -}}
+{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.storage.fs .Values.global.storage.fs ) "context" . ) }}
+{{- end -}}
