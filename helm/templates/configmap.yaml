@@ -19,7 +19,7 @@ data:
   # DB_SSL_PATH_CERT: {{ .Values.sideCar.env.ssl.CERT_FILE_LOCATION }}
   GEOSERVER_USER: {{ .Values.geoserverUser | quote }}
   GEOSERVER_PASS: {{ .Values.geoserverPassword | quote }}
-  GEOSERVER_DATA_DIR: {{ .Values.geoserverDataDir | quote }}
+  GEOSERVER_DATA_DIR: {{ .Values.dataDir.mountPath | quote }}
   GEOSERVER_BASE_URL: {{ .Values.sideCar.env.geoserverBaseUrl | quote }}
   DATA_STORE_HOST: {{ $db.host | quote }}
   DATA_STORE_PORT: {{ $db.port | quote }}
