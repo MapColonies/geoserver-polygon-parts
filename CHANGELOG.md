@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/MapColonies/geoserver-polygon-parts/compare/v1.0.2...v1.1.0) (2024-10-15)
+
+
+### Features
+
+* geoserver persistent dataDir (MAPCO-4961, MAPCO-4983) ([#7](https://github.com/MapColonies/geoserver-polygon-parts/issues/7)) ([63421ca](https://github.com/MapColonies/geoserver-polygon-parts/commit/63421ca18695384e4b448237c54cfdf775ac1402))
+* new attributes + configure to readonly ([#4](https://github.com/MapColonies/geoserver-polygon-parts/issues/4)) ([699ea56](https://github.com/MapColonies/geoserver-polygon-parts/commit/699ea569886a24e62ae93c2235711e9a7c0866b2))
+
 ### [1.0.2](https://github.com/MapColonies/geoserver-polygon-parts/compare/v1.0.1...v1.0.2) (2024-06-27)
 
 ### [1.0.1](https://github.com/MapColonies/geoserver-polygon-parts/compare/v1.0.0...v1.0.1) (2024-06-26)
