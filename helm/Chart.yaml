@@ -1,8 +1,8 @@
 apiVersion: v2
 name: pp-geoserver
 type: application
-version: 1.1.4
-appVersion: 1.1.4
+version: 1.1.5
+appVersion: 1.1.5
 description: Chart for geoserver in openshift
 dependencies:
   - name: nginx
