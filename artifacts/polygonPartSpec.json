@@ -45,20 +45,12 @@
     "attributes": {
       "attribute": [
         {
-          "name": "partId",
-          "minOccurs": 1,
-          "maxOccurs": 1,
-          "nillable": false,
-          "binding": "java.lang.Integer",
-          "source": "part_id"
-        },
-        {
-          "name": "recordId",
+          "name": "catalogId",
           "minOccurs": 1,
           "maxOccurs": 1,
           "nillable": false,
           "binding": "java.util.UUID",
-          "source": "record_id"
+          "source": "catalog_id"
         },
         {
           "name": "productId",
@@ -77,26 +69,28 @@
           "source": "product_type"
         },
         {
-          "name": "id",
-          "minOccurs": 0,
-          "maxOccurs": 1,
-          "nillable": true,
-          "binding": "java.lang.String"
-        },
-        {
-          "name": "name",
-          "minOccurs": 0,
-          "maxOccurs": 1,
-          "nillable": true,
-          "binding": "java.lang.String"
-        },
-        {
-          "name": "updatedInVersion",
+          "name": "sourceId",
           "minOccurs": 0,
           "maxOccurs": 1,
           "nillable": true,
           "binding": "java.lang.String",
-          "source": "updated_in_version"
+          "source": "source_id"
+        },
+        {
+          "name": "sourceName",
+          "minOccurs": 0,
+          "maxOccurs": 1,
+          "nillable": true,
+          "binding": "java.lang.String",
+          "source": "source_name"
+        },
+        {
+          "name": "productVersion",
+          "minOccurs": 0,
+          "maxOccurs": 1,
+          "nillable": true,
+          "binding": "java.lang.String",
+          "source": "product_version"
         },
         {
           "name": "ingestionDateUTC",
