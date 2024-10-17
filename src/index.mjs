@@ -13,75 +13,73 @@ const logger = jsLogger.default({
   prettyPrint: env.get('LOG_PRETTY').default('false').asBool(),
 });
 
-const GEOSERVER_USER = env.get('GEOSERVER_USER').default('admin').asString();
-const GEOSERVER_PASS = env.get('GEOSERVER_PASS').default('geoserver').asString();
-
-const DATA_STORE_CREDENTIALS = {
-  host: env.get('DATA_STORE_HOST').default('localhost').asString(),
-  port: env.get('DATA_STORE_PORT').default('5432').asString(),
-  database: env.get('DATA_STORE_DATABASE').default('postgres').asString(),
-  user: env.get('DATA_STORE_USER').default('postgres').asString(),
-  password: env.get('DATA_STORE_PASSWORD').default('postgres').asString(),
-  dbtype: env.get('DATA_STORE_DBTYPE').default('postgis').asString(),
-  schema: env.get('DATA_STORE_SCHEMA').default('polygon_parts').asString(),
-  ssl: env.get('DATA_STORE_SSL').default('DISABLE').asString(),
-};
-
 const GEOSERVER_BASE_URL = env.get('GEOSERVER_BASE_URL').default('http://localhost:8080/geoserver').asString();
 
-const POLYGON_PARTS_WORKSPACE_NAME = env.get('POLYGON_PARTS_WORKSPACE_NAME').default('polygon_parts').asString();
+const GEOSERVER_API_BASE_URL = env.get('GEOSERVER_API_BASE_URL').default('http://localhost:8081').asString();
 
-const WORKSPACE_API_URL = `${GEOSERVER_BASE_URL}/rest/workspaces`;
-const GLOBAL_WFS_SETTING_API_URL = `${GEOSERVER_BASE_URL}/rest/services/wfs/settings`;
-const DATA_STORE_API_URL = `${WORKSPACE_API_URL}/${POLYGON_PARTS_WORKSPACE_NAME}/datastores`;
-const DATA_STORE_NAME = env.get('DATA_STORE_NAME').default('polygon_parts').asString();
+const WORKSPACE_NAME = env.get('WORKSPACE_NAME').default('string1').asString();
+const DATASTORE_NAME = env.get('DATASTORE_NAME').default('string').asString();
 
-const FEATURE_TYPES_API_URL = `${DATA_STORE_API_URL}/${DATA_STORE_NAME}/featuretypes`;
-const LAYER_BODY_JSON = './artifacts/polygonPartSpec.json';
-const MAX_FEATURES = env.get('MAX_FEATURES').default('0').asInt();
-const NUM_DECIMALS = env.get('NUM_DECIMALS').default('0').asInt();
-const LAYER_TITLE_NAME = env.get('LAYER_TITLE_NAME').default('polygon_parts').asString();
+const WORKSPACE_API_URL = `${GEOSERVER_API_BASE_URL}/workspaces`;
+const DATA_STORE_API_URL = `${GEOSERVER_API_BASE_URL}/dataStores/${WORKSPACE_NAME}`;
+const FEATURE_TYPES_API_URL = `${GEOSERVER_API_BASE_URL}/featureTypes/${WORKSPACE_NAME}/${DATASTORE_NAME}`;
+
+const GLOBAL_WFS_SETTING_API_URL = `${GEOSERVER_API_BASE_URL}/rest/services/wfs/settings`;
 
 // *******************************************************************
 
 // Loop until validate geoserver is up
 await checkGeoserverIsUp();
 
+
+// check if a workspace exists , if not , create one
+await checkGeoserverIsUp();
+const workspaceExists = await checkWorkspace();
+if(!workspaceExists){
+  await createWorkspace();
+}
+console.log(`workspaceExists: ${workspaceExists}`);
+const dataStoreExists = await checkDataStore();
+
+console.log(`dataStoreExists: ${dataStoreExists}`);
+if(!dataStoreExists){
+  await createDataStore();
+}
+
+await checkFeatureTypes();
+
 // Stage 1
 // This stage will send api request to delete workspace if already exists
-await deleteWorkspaceIfExists();
+// await deleteWorkspaceIfExists();
 
-// Stage 2
-// This stage will send api request to create workspace
-await createWorkspace();
+// // Stage 2
+// // This stage will send api request to create workspace
+// await createWorkspace();
 
-// Stage 3
-// This stage will send api request to create data-store (connection to pg)
-await createPgDatastore();
+// // Stage 3
+// // This stage will send api request to create data-store (connection to pg)
+// await createPgDatastore();
 
-// Stage 4
-// This stage will send api request to create wfs layer feature
-await createWfsLayer();
+// // Stage 4
+// // This stage will send api request to create wfs layer feature
+// await createWfsLayer();
 
 // Stage 5
 // This stage will send api request to change wfs as read only service
-await setWfsAsBasic();
+//await setWfsAsBasic();
 
 // Complete generating env, will loop as void mode
-logger.info({ msg: `Env ready: Complete generating new WFS layer: ${LAYER_TITLE_NAME}` });
-setInterval(() => {}, 1000000);
+logger.info({ msg: `Env ready: Complete generating new WFS layer:` });
+//setInterval(() => {}, 1000000);
 
 /**
- * This function will check periodically till detect that geoserver is up and than exit the method
+ * This function will check periodically till detect that geoserver is up and than exit the method - TODO: go to readiness through service
  */
 async function checkGeoserverIsUp() {
   while (true) {
     try {
       const responseFromGs = await zx.fetch(`${GEOSERVER_BASE_URL}`, {
         method: 'GET',
-        headers: {
-          Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
-        },
       });
       logger.info({
         msg: `Got response from geoserver with status code: ${responseFromGs.status}`,
@@ -98,144 +96,183 @@ async function checkGeoserverIsUp() {
 }
 
 /**
- * Send api to delete configured geoserver workspace - do nothing if not exists
+ * Send api to check if the workspace exists
  */
-async function deleteWorkspaceIfExists() {
-  const deleteApiParams = new URLSearchParams();
-  deleteApiParams.append('recurse', true);
-
-  const deleteWorkspaceResp = await zx.fetch(`${WORKSPACE_API_URL}/${POLYGON_PARTS_WORKSPACE_NAME}?` + deleteApiParams, {
-    method: 'DELETE',
-    headers: {
-      Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
-    },
+async function checkWorkspace() {
+  const getWorkspaceResp = await zx.fetch(`${WORKSPACE_API_URL}/${WORKSPACE_NAME}`, {
+    method: 'GET',
   });
 
-  logger.debug({ msg: await deleteWorkspaceResp.text() });
-
-  assertOk(deleteWorkspaceResp.status === 200 || deleteWorkspaceResp.status === 404);
-  logger.info({
-    msg: `1. Complete validate & clean (if exists) workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${deleteWorkspaceResp.status}`,
-  });
+  logger.info({ msg: await getWorkspaceResp.text() });
 
   await zx.sleep(1000);
+  if (getWorkspaceResp.status === 200) {
+    return true;
+  } else if (getWorkspaceResp.status === 404) {
+    return false;
+  } else {
+    throw new Error(`Unexpected status code: ${getWorkspaceResp.status}`);
+  }
 }
 
-/**
- * Send api request to create new workspace
- */
 async function createWorkspace() {
-  const polygonPartWorkspaceBody = {
-    workspace: {
-      name: POLYGON_PARTS_WORKSPACE_NAME,
-    },
+  const createWorkspaceBody = {
+    name: WORKSPACE_NAME,
   };
 
-  const createWorkspaceResp = await zx.fetch(WORKSPACE_API_URL, {
+  const createWorkspaceResp = await zx.fetch(`${WORKSPACE_API_URL}`, {
     method: 'POST',
-    body: JSON.stringify(polygonPartWorkspaceBody),
+    body: JSON.stringify(createWorkspaceBody),
     headers: {
-      Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
       'Content-Type': 'application/json',
     },
   });
 
-  logger.debug({ msg: await createWorkspaceResp.text() });
-  assertEqual(createWorkspaceResp.status, 201);
-  logger.info({
-    msg: `2. Complete creation workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${createWorkspaceResp.status}`,
-  });
+  logger.info({ msg: await createWorkspaceResp.text() });
+
+  assertOk(createWorkspaceResp.status === 201);
+  // logger.info({
+  //   msg: `1. Complete validate & clean (if exists) workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${deleteWorkspaceResp.status}`,
+  // });
 
   await zx.sleep(1000);
 }
 
 /**
- * Send api request to connect and create db connection by datastore of postgis type
+ * Send api to check if the workspace exists, if not create one
  */
-async function createPgDatastore() {
-  const dataStoreCreationBody = {
-    dataStore: {
-      name: DATA_STORE_NAME,
-      description: 'This store connect to polygon parts db',
-      connectionParameters: {
-        entry: [
-          { '@key': 'host', $: DATA_STORE_CREDENTIALS.host },
-          { '@key': 'port', $: DATA_STORE_CREDENTIALS.port },
-          { '@key': 'database', $: DATA_STORE_CREDENTIALS.database },
-          { '@key': 'user', $: DATA_STORE_CREDENTIALS.user },
-          { '@key': 'passwd', $: DATA_STORE_CREDENTIALS.password },
-          { '@key': 'dbtype', $: DATA_STORE_CREDENTIALS.dbtype },
-          { '@key': 'schema', $: DATA_STORE_CREDENTIALS.schema },
-          { '@key': 'Evictor run periodicity', $: '300' },
-          { '@key': 'Max open prepared statements', $: '50' },
-          { '@key': 'encode functions', $: 'true' },
-          { '@key': 'Batch insert size', $: '1' },
-          { '@key': 'preparedStatements', $: 'false' },
-          { '@key': 'Loose bbox', $: 'true' },
-          { '@key': 'SSL mode', $: DATA_STORE_CREDENTIALS.ssl },
-          { '@key': 'Estimated extends', $: 'true' },
-          { '@key': 'fetch size', $: '1000' },
-          { '@key': 'Expose primary keys', $: 'false' },
-          { '@key': 'validate connections', $: 'true' },
-          { '@key': 'Support on the fly geometry simplification', $: 'true' },
-          { '@key': 'Connection timeout', $: '20' },
-          { '@key': 'create database', $: 'false' },
-          {
-            '@key': 'Method used to simplify geometries',
-            $: 'PRESERVETOPOLOGY',
+async function checkDataStore() {
+  const getDataStoreResp = await zx.fetch(`${DATA_STORE_API_URL}/${DATASTORE_NAME}`, {
+    method: 'GET',
+  });
+
+  logger.info({ msg: await getDataStoreResp.text() });
+
+  await zx.sleep(1000);
+  if (getDataStoreResp.status === 200) {
+    return true;
+  } else if (getDataStoreResp.status === 404) {
+    return false;
+  } else {
+    throw new Error(`Unexpected status code: ${getDataStoreResp.status}`);
+  }
+  // logger.info({
+  //   msg: `1. Complete validate & clean (if exists) workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${deleteWorkspaceResp.status}`,
+  // });
+}
+
+async function createDataStore() {
+  const createDataStoreBody = {
+    name: DATASTORE_NAME,
+  };
+
+  const createDataStoreResp = await zx.fetch(`${DATA_STORE_API_URL}`, {
+    method: 'POST',
+    body: JSON.stringify(createDataStoreBody),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  logger.info({ msg: await createDataStoreResp.text() });
+
+  assertOk(createDataStoreResp.status === 201);
+  // logger.info({
+  //   msg: `1. Complete validate & clean (if exists) workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${deleteWorkspaceResp.status}`,
+  // });
+
+  await zx.sleep(1000);
+}
+
+/**
+ * compare get list configured and get available - if create feature types of all that are available and not configured
+ */
+async function checkFeatureTypes() {
+  const listAvailableParams = new URLSearchParams();
+  listAvailableParams.append('list', 'available');
+
+  const listConfiguredParams = new URLSearchParams();
+  listConfiguredParams.append('list', 'configured');
+
+  const getAvailableFeatureTypes = await zx.fetch(`${FEATURE_TYPES_API_URL}?` + listAvailableParams, {
+    method: 'GET',
+  });
+
+  const availableLayers = await getAvailableFeatureTypes.json();
+  logger.info({ msg: availableLayers });
+
+  const getConfiguredFeatureTypes = await zx.fetch(`${FEATURE_TYPES_API_URL}?` + listConfiguredParams, {
+    method: 'GET',
+  });
+  const configuredLayers = await getConfiguredFeatureTypes.json();
+
+  logger.info({ msg: configuredLayers });
+
+  // Extract layer names from both arrays
+  const availableNames = availableLayers.map((layer) => layer.name);
+  const configuredNames = configuredLayers.map((layer) => layer.name);
+
+  // Case: Available and Configured are the same
+  if (availableNames.length === configuredNames.length && availableNames.every((name) => configuredNames.includes(name))) {
+    logger.info({ msg: 'All available Layers are configured ' });
+    return;
+  }
+
+  // Case: Available is empty
+  if (availableNames.length === 0) {
+    logger.warn({ msg: `NOTE! There are no available layers ` });
+    //return;
+  }
+
+  //Case: Some configured layers are not available
+  const notInAvailable = configuredNames.filter((name) => !availableNames.includes(name));
+  if (notInAvailable.length > 0) {
+    const message = `Some configured layers are not available in DB:  ${notInAvailable}`;
+    logger.error(message);
+    throw new Error(message);
+  }
+
+  // Case: Available has values and Configured is empty - iterate on available and post them
+  if (availableNames.length > 0 && configuredNames.length === 0) {
+    logger.debug({ msg: `there are no configured layers but there are available - posting all available` });
+    //TODO: iterate over name lists and create featureLayers
+    // Create an array of POST request promises for each availableName
+    const postRequests = availableNames.map(async (name) =>{
+      try {
+        const response = await zx.fetch(FEATURE_TYPES_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          { '@key': 'min connections', $: '1' },
-          { '@key': 'max connections', $: '10' },
-          { '@key': 'Evictor tests per run', $: '3' },
-          { '@key': 'Test while idle', $: 'true' },
-          { '@key': 'Max connection idle time', $: '300' },
-        ],
-      },
-    },
-  };
+          body: JSON.stringify({ nativeName:name }),
+        });
+  
+        // Check if the response was successful (status 2xx)
+        if (!response.ok) {
+          throw new Error(`Failed to POST for ${name}: ${response.status} ${response.statusText}`);
+        }
+  
+        console.log(`Successfully posted for ${name}`);
+      } catch (error) {
+        // Log detailed error message for the failed request
+        console.error(`Error posting for ${name}:`, error);
+        throw error; // Re-throw the error to ensure it is caught by Promise.all
+      }
+    });
 
-  const createDataStoreResp = await zx.fetch(DATA_STORE_API_URL, {
-    method: 'POST',
-    body: JSON.stringify(dataStoreCreationBody),
+    try {
+      // Wait for all promises to resolve using Promise.all()
+      await Promise.all(postRequests);
 
-    headers: {
-      Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
-      'Content-Type': 'application/json',
-    },
-  });
-
-  logger.debug({ msg: await createDataStoreResp.text() });
-  assertEqual(createDataStoreResp.status, 201);
-  logger.info({
-    msg: `3. Complete creation data-store ${DATA_STORE_NAME} with status code: ${createDataStoreResp.status}`,
-  });
+      // If all succeed, notify success
+      console.log('All POST requests were successful');
+    } catch (error) {
+      // If any request fails, handle the error
+      console.error('One or more POST requests failed', error);
+    }
+  }
 
   await zx.sleep(1000);
-}
-
-/**
- * Send api request with layer json configuration and create new WFS layer according dbstore
- */
-async function createWfsLayer() {
-  const layerBody = JSON.parse(fs.readFileSync(LAYER_BODY_JSON));
-  layerBody['featureType']['maxFeatures'] = MAX_FEATURES;
-  layerBody['featureType']['numDecimals'] = NUM_DECIMALS;
-  layerBody['featureType']['title'] = LAYER_TITLE_NAME;
-
-  const createLayerResp = await zx.fetch(FEATURE_TYPES_API_URL, {
-    method: 'POST',
-    body: JSON.stringify(layerBody),
-    headers: {
-      Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
-      'Content-Type': 'application/json',
-    },
-  });
-
-  logger.debug({ msg: await createLayerResp.text() });
-  assertEqual(createLayerResp.status, 201);
-  logger.info({
-    msg: `4. Complete creation layer ${LAYER_TITLE_NAME} with status code: ${createLayerResp.status}`,
-  });
 }
 
 /**
