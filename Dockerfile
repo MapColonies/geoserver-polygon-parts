@@ -7,7 +7,6 @@ WORKDIR /app
 RUN chmod g+w /app
 
 COPY package*.json /app/
-COPY ./artifacts ./artifacts 
 COPY ./src ./src
 
 RUN npm install
