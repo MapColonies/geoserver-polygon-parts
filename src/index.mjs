@@ -19,13 +19,14 @@ const GEOSERVER_API_BASE_URL = env.get('GEOSERVER_API_BASE_URL').asString();
 const WORKSPACE_NAME = env.get('WORKSPACE_NAME').asString();
 const DATASTORE_NAME = env.get('DATASTORE_NAME').asString();
 
-const FEATURE_TYPES_BLACK_LIST = env.get('FEATURE_TYPES_BLACK_LIST').asArray();
+const FEATURE_TYPES_BLACK_LIST = env.get('FEATURE_TYPES_BLACK_LIST').asJson();
 
 const WORKSPACE_API_URL = `${GEOSERVER_API_BASE_URL}/workspaces`;
 const DATA_STORE_API_URL = `${GEOSERVER_API_BASE_URL}/dataStores/${WORKSPACE_NAME}`;
 const FEATURE_TYPES_API_URL = `${GEOSERVER_API_BASE_URL}/featureTypes/${WORKSPACE_NAME}/${DATASTORE_NAME}`;
 
 const GLOBAL_WFS_SETTING_API_URL = `${GEOSERVER_API_BASE_URL}/services/wfs/settings`;
+
 
 // *******************GEOSERVER INITIALIZATION************************************************
 
@@ -51,6 +52,7 @@ if (!dataStoreExists) {
 await checkFeatureTypes();
 
 logger.info({ msg: `Env ready: Completed Geoserver initialization` });
+setInterval(() => {console.log('avocado')}, 1000000);
 
 // *******************************************************************
 
@@ -72,7 +74,7 @@ async function checkGeoserverIsUp() {
       logger.warn({
         msg: `Failed connect to geoserver with error ${error}, will retry again`,
       });
-      await zx.sleep(60000);
+      await zx.sleep(30000);
     }
   }
 }
@@ -169,7 +171,6 @@ async function createDataStore() {
 async function checkFeatureTypes() {
   // Extract layer names from both arrays
   const availableNames = await getAvailableFeatureTypes();
-  const configuredNames = await getConfiguredFeatureTypes();
 
   if (availableNames.length === 0) {
     logger.info(' There are no layers to publish! ');
@@ -216,7 +217,7 @@ async function setWfsAsBasic() {
     body: JSON.stringify({ serviceLevel: 'BASIC' }),
   });
 
-  logger.debug({ msg: await wfsModeResponse.text() });
+  logger.info({ msg: await wfsModeResponse.text() });
   assertEqual(wfsModeResponse.status, 200);
   logger.info({
     msg: `Set WFS service level into 'BASIC' - read only mode with status code: ${wfsModeResponse.status}`,
@@ -230,7 +231,6 @@ async function getAvailableFeatureTypes() {
     method: 'GET',
   });
   const availableLayers = await getAvailableFeatureTypes.json();
-  logger.debug({ msg: `availableLayers: ${availableLayers}` });
   const availableNames = availableLayers.filter((layer) => !FEATURE_TYPES_BLACK_LIST.includes(layer.name)).map((layer) => layer.name);
   logger.info({ msg: `availableNames: ${availableNames}` });
   await zx.sleep(1000);
