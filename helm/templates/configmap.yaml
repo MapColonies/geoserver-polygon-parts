@@ -1,38 +1,25 @@
 {{- $chartName := include "geoserver.name" . -}}
 {{- $db := (include "common.db.merged" .) | fromYaml }}
 {{- $fs := (include "common.fs.merged" .) | fromYaml }}
+{{- $geoserver := (include "common.geoserver.merged" .) | fromYaml }}
+{{- $serviceUrls := (include "common.serviceUrls.merged" .) | fromYaml }}
 
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "geoserver.fullname" . }}
+  name: {{ template "configmap.fullname" . }}
   labels:
 {{ include "geoserver.labels" . | indent 4}}
 data:
   LOG_LEVEL: {{ .Values.sideCar.env.logLevel | quote }}
   LOG_PRETTY: {{ .Values.sideCar.env.logPretty | quote }}
-  DATA_DIR_PATH: {{ $fs.internalPvc.mountPath | quote }}
   UPDATE_INTERVAL: {{ .Values.updateInterval | default 120000 | quote }}
   INITIAL_MEMORY: {{ .Values.initialMemory | default "128M" | quote }}
   MAX_MEMORY: {{ .Values.maxMemory | default "756M" | quote }}
-  # DB_SSL_PATH_CA: {{ .Values.sideCar.env.ssl.CA_FILE_LOCATION }}
-  # DB_SSL_PATH_KEY: {{ .Values.sideCar.env.ssl.KEY_FILE_LOCATION }}
-  # DB_SSL_PATH_CERT: {{ .Values.sideCar.env.ssl.CERT_FILE_LOCATION }}
-  GEOSERVER_USER: {{ .Values.geoserverUser | quote }}
-  GEOSERVER_PASS: {{ .Values.geoserverPassword | quote }}
   GEOSERVER_DATA_DIR: {{ $fs.internalPvc.mountPath | quote }}
-  GEOSERVER_BASE_URL: {{ .Values.sideCar.env.geoserverBaseUrl | quote }}
-  DATA_STORE_HOST: {{ $db.host | quote }}
-  DATA_STORE_PORT: {{ $db.port | quote }}
-  DATA_STORE_DATABASE: {{ $db.name | quote }}
-  DATA_STORE_USER: {{ .Values.sideCar.env.dataStore.user | quote }}
-  DATA_STORE_PASSWORD: {{ .Values.sideCar.env.dataStore.password | quote }}
-  DATA_STORE_DBTYPE: {{ .Values.sideCar.env.dataStore.dbType | quote }}
-  DATA_STORE_SCHEMA: {{ .Values.sideCar.env.dataStore.schema | quote }}
-  DATA_STORE_NAME: {{ .Values.sideCar.env.dataStore.name | quote }}
-  DATA_STORE_SSL: {{ .Values.sideCar.env.dataStore.ssl | quote }}
-  POLYGON_PARTS_WORKSPACE_NAME: {{ .Values.sideCar.env.polygonPartsWorkspaceName | quote }}
-  MAX_FEATURES: {{ .Values.sideCar.env.layer.maxFeatures | quote }}
-  NUM_DECIMALS: {{ .Values.sideCar.env.layer.numDecimals | quote }}
-  LAYER_TITLE_NAME: {{ .Values.sideCar.env.layer.titleName | quote }}
+  GEOSERVER_BASE_URL: {{ $serviceUrls.geoserverUrl | quote }}
+  GEOSERVER_API_BASE_URL : {{ $serviceUrls.geoserverApiUrl | quote }}
+  WORKSPACE_NAME: {{ $geoserver.workspace | quote }}
+  DATASTORE_NAME: {{ $geoserver.dataStore | quote }}
+  FEATURE_TYPES_BLACK_LIST: {{ .Values.sideCar.env.featuresBlackList | toJson | quote }}
   PGAPPNAME: {{ $chartName }}
