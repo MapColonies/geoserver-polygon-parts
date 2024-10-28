@@ -18,9 +18,9 @@ imagePullPolicy: Always
 
 image:
   geoserverRepository: geoserver-os
-  geoserverTag: ""
+  geoserverTag: "latest"
   sidecarRepository: pp-geoserver-side-car
-  sidecarTag: ""
+  sidecarTag: "latest"
 
 updateInterval: 10000
 
@@ -35,7 +35,7 @@ maxMemory: "756M"
 storage:
   fs:
     internalPvc:
-      name: "internal-pvc-nfs"
+      name: ""
       mountPath: "/data_dir"
       geoserverDataDirSubPath: ""
 geoserver:
@@ -132,7 +132,7 @@ route:
 
 sideCar:
   env:
-    logLevel: "debug"
+    logLevel: "info"
     logPretty: "false"
     ssl:
       CA_DIR: /opt/certs/ca/
