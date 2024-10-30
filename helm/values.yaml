@@ -141,11 +141,14 @@ sideCar:
       CA_FILE_LOCATION: /opt/certs/ca/ca.pem
       KEY_FILE_LOCATION: /opt/certs/key/key.pem
       CERT_FILE_LOCATION: /opt/certs/cert/cert.pem
-  
-    featuresBlackList:
-      - migrations
-      - parts
-      - polygon_parts
+
+    featureTypesBlackLists:
+      tableNamesRegex:
+        - '.*_parts'
+      tableNameStrings:
+        - migrations
+        - parts
+        - polygon_parts    
 
 
 

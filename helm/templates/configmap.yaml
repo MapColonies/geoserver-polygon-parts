@@ -21,5 +21,6 @@ data:
   GEOSERVER_API_BASE_URL : {{ $serviceUrls.geoserverApiUrl | quote }}
   WORKSPACE_NAME: {{ $geoserver.workspace | quote }}
   DATASTORE_NAME: {{ $geoserver.dataStore | quote }}
-  FEATURE_TYPES_BLACK_LIST: {{ .Values.sideCar.env.featuresBlackList | toJson | quote }}
+  FEATURE_TYPES_STRINGS_BLACK_LIST: {{ .Values.sideCar.env.featureTypesBlackLists.tableNameStrings | toJson | quote }}
+  FEATURE_TYPES_REGEX_BLACK_LIST: {{ .Values.sideCar.env.featureTypesBlackLists.tableNamesRegex | toJson | quote }}
   PGAPPNAME: {{ $chartName }}
