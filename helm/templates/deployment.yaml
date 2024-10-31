@@ -1,9 +1,11 @@
 {{- $fs := (include "common.fs.merged" .) | fromYaml }}
+{{- $cloudProviderImagePullSecretName := include "geoserver.cloudProviderImagePullSecretName" . -}}
+{{- $deploymentName := include "deployment.fullname" . }}
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "geoserver.fullname" . }}
+  name: {{ $deploymentName }}
   labels:
 {{ include "geoserver.labels" . | indent 4 }}
   {{- with .Values.annotations }}
@@ -16,7 +18,6 @@ spec:
 {{ include "geoserver.selectorLabels" . | indent 6}}
   template:
     metadata:
-      name: {{ template "geoserver.fullname" . }}
       labels:
 {{ include "geoserver.labels" . | indent 8}}
       annotations:
@@ -24,12 +25,14 @@ spec:
         {{- (tpl . $) | indent 8 }}
         {{- end }}
     spec:
+    {{- if $cloudProviderImagePullSecretName }}
       imagePullSecrets:
-        - name: {{ .Values.global.pullSecretName }}
+        - name: {{ $cloudProviderImagePullSecretName | quote }}
+    {{- end }}
       containers:
       - name: {{ template "geoserver.fullname" . }}
         image: {{ include "geoserver.image" . }}
-        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
         {{- if .Values.resources.enabled }}
         resources:
           requests:
@@ -47,12 +50,12 @@ spec:
           - name: GEOSERVER_ADMIN_USER
             valueFrom:
               secretKeyRef:
-                name: {{ template "geoserver.secretName" . }}
+                name: {{ template "secret.fullname" . }}
                 key: GEOSERVER_USER
           - name: GEOSERVER_ADMIN_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{ template "geoserver.secretName" . }}
+                name: {{ template "secret.fullname" . }}
                 key: GEOSERVER_PASS
           {{- if .Values.pgSslAuth.enabled }}
           - name: POSTGRES_ENABLE_SSL_AUTH
@@ -113,6 +116,19 @@ spec:
         - name: root-cert-conf
           mountPath: {{ .Values.rootCerts.mountPath }}
         {{- end }}
+      - name: {{ template "geoserver.fullname" . }}-init
+        image: {{ include "geoserver.sidecarImage" . }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        resources: {{- toYaml .Values.sidecarResources | nindent 10 }}
+        env:
+          {{- with .Values.extraSidecarEnv }}
+          {{- tpl . $ | nindent 10 }}
+          {{- end }}
+        envFrom:
+          - secretRef:
+              name: {{ template "secret.fullname" . }}
+          - configMapRef:
+              name: {{ template "configmap.fullname" . }}
       volumes:
       - name: data-dir-volume
         persistentVolumeClaim:

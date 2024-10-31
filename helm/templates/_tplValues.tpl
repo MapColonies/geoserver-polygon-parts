@@ -56,3 +56,13 @@ Custom definitions
 {{- define "common.fs.merged" -}}
 {{- include "common.tplvalues.merge" ( dict "values" ( list .Values.storage.fs .Values.global.storage.fs ) "context" . ) }}
 {{- end -}}
+
+
+{{- define "common.geoserver.merged" -}}
+{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.geoserver .Values.global.geoserver ) "context" . ) }}
+{{- end -}}
+
+{{- define "common.serviceUrls.merged" -}}
+{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.serviceUrls .Values.global.serviceUrls ) "context" . ) }}
+{{- end -}}
+

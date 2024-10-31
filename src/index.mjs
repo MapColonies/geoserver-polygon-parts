@@ -1,6 +1,5 @@
 import * as zx from 'zx';
 import { strictEqual as assertEqual, ok as assertOk } from 'assert';
-import fs from 'fs';
 import env from 'env-var';
 import 'dotenv/config';
 import jsLogger from '@map-colonies/js-logger';
@@ -13,63 +12,51 @@ const logger = jsLogger.default({
   prettyPrint: env.get('LOG_PRETTY').default('false').asBool(),
 });
 
-const GEOSERVER_USER = env.get('GEOSERVER_USER').default('admin').asString();
-const GEOSERVER_PASS = env.get('GEOSERVER_PASS').default('geoserver').asString();
+const GEOSERVER_BASE_URL = env.get('GEOSERVER_BASE_URL').asString();
 
-const DATA_STORE_CREDENTIALS = {
-  host: env.get('DATA_STORE_HOST').default('localhost').asString(),
-  port: env.get('DATA_STORE_PORT').default('5432').asString(),
-  database: env.get('DATA_STORE_DATABASE').default('postgres').asString(),
-  user: env.get('DATA_STORE_USER').default('postgres').asString(),
-  password: env.get('DATA_STORE_PASSWORD').default('postgres').asString(),
-  dbtype: env.get('DATA_STORE_DBTYPE').default('postgis').asString(),
-  schema: env.get('DATA_STORE_SCHEMA').default('polygon_parts').asString(),
-  ssl: env.get('DATA_STORE_SSL').default('DISABLE').asString(),
-};
+const GEOSERVER_API_BASE_URL = env.get('GEOSERVER_API_BASE_URL').asString();
 
-const GEOSERVER_BASE_URL = env.get('GEOSERVER_BASE_URL').default('http://localhost:8080/geoserver').asString();
+const WORKSPACE_NAME = env.get('WORKSPACE_NAME').asString();
+const DATASTORE_NAME = env.get('DATASTORE_NAME').asString();
 
-const POLYGON_PARTS_WORKSPACE_NAME = env.get('POLYGON_PARTS_WORKSPACE_NAME').default('polygon_parts').asString();
+const FEATURE_TYPES_STRINGS_BLACK_LIST = env.get('FEATURE_TYPES_STRINGS_BLACK_LIST').asJson();
+const FEATURE_TYPES_REGEX_BLACK_LIST = env.get('FEATURE_TYPES_REGEX_BLACK_LIST').asJson();
 
-const WORKSPACE_API_URL = `${GEOSERVER_BASE_URL}/rest/workspaces`;
-const GLOBAL_WFS_SETTING_API_URL = `${GEOSERVER_BASE_URL}/rest/services/wfs/settings`;
-const DATA_STORE_API_URL = `${WORKSPACE_API_URL}/${POLYGON_PARTS_WORKSPACE_NAME}/datastores`;
-const DATA_STORE_NAME = env.get('DATA_STORE_NAME').default('polygon_parts').asString();
+const WORKSPACE_API_URL = `${GEOSERVER_API_BASE_URL}/workspaces`;
+const DATA_STORE_API_URL = `${GEOSERVER_API_BASE_URL}/dataStores/${WORKSPACE_NAME}`;
+const FEATURE_TYPES_API_URL = `${GEOSERVER_API_BASE_URL}/featureTypes/${WORKSPACE_NAME}/${DATASTORE_NAME}`;
 
-const FEATURE_TYPES_API_URL = `${DATA_STORE_API_URL}/${DATA_STORE_NAME}/featuretypes`;
-const LAYER_BODY_JSON = './artifacts/polygonPartSpec.json';
-const MAX_FEATURES = env.get('MAX_FEATURES').default('0').asInt();
-const NUM_DECIMALS = env.get('NUM_DECIMALS').default('0').asInt();
-const LAYER_TITLE_NAME = env.get('LAYER_TITLE_NAME').default('polygon_parts').asString();
+const GLOBAL_WFS_SETTING_API_URL = `${GEOSERVER_API_BASE_URL}/services/wfs/settings`;
 
-// *******************************************************************
+
+// *******************GEOSERVER INITIALIZATION************************************************
 
 // Loop until validate geoserver is up
 await checkGeoserverIsUp();
 
-// Stage 1
-// This stage will send api request to delete workspace if already exists
-await deleteWorkspaceIfExists();
-
-// Stage 2
-// This stage will send api request to create workspace
-await createWorkspace();
-
-// Stage 3
-// This stage will send api request to create data-store (connection to pg)
-await createPgDatastore();
-
-// Stage 4
-// This stage will send api request to create wfs layer feature
-await createWfsLayer();
-
-// Stage 5
-// This stage will send api request to change wfs as read only service
+//set wfs mode
 await setWfsAsBasic();
 
-// Complete generating env, will loop as void mode
-logger.info({ msg: `Env ready: Complete generating new WFS layer: ${LAYER_TITLE_NAME}` });
-setInterval(() => {}, 1000000);
+//check if workspace exists, if it doesnt - create one
+const workspaceExists = await checkWorkspace();
+if (!workspaceExists) {
+  await createWorkspace();
+}
+
+//check if dataStore exists, if it doesnt - create one
+const dataStoreExists = await checkDataStore();
+if (!dataStoreExists) {
+  await createDataStore();
+}
+
+//check featureLayers and publish them if needed
+await checkFeatureTypes();
+
+logger.info({ msg: `Env ready: Completed Geoserver initialization` });
+printAvocado();
+setInterval(() => { printAvocado() }, 10000000);
+
+// *******************************************************************
 
 /**
  * This function will check periodically till detect that geoserver is up and than exit the method
@@ -79,9 +66,6 @@ async function checkGeoserverIsUp() {
     try {
       const responseFromGs = await zx.fetch(`${GEOSERVER_BASE_URL}`, {
         method: 'GET',
-        headers: {
-          Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
-        },
       });
       logger.info({
         msg: `Got response from geoserver with status code: ${responseFromGs.status}`,
@@ -92,174 +76,244 @@ async function checkGeoserverIsUp() {
       logger.warn({
         msg: `Failed connect to geoserver with error ${error}, will retry again`,
       });
-      await zx.sleep(5000);
+      await zx.sleep(15000);
     }
   }
 }
 
 /**
- * Send api to delete configured geoserver workspace - do nothing if not exists
+ * Send api to check if the workspace exists
  */
-async function deleteWorkspaceIfExists() {
-  const deleteApiParams = new URLSearchParams();
-  deleteApiParams.append('recurse', true);
-
-  const deleteWorkspaceResp = await zx.fetch(`${WORKSPACE_API_URL}/${POLYGON_PARTS_WORKSPACE_NAME}?` + deleteApiParams, {
-    method: 'DELETE',
-    headers: {
-      Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
-    },
+async function checkWorkspace() {
+  const getWorkspaceResp = await zx.fetch(`${WORKSPACE_API_URL}/${WORKSPACE_NAME}`, {
+    method: 'GET',
   });
 
-  logger.debug({ msg: await deleteWorkspaceResp.text() });
-
-  assertOk(deleteWorkspaceResp.status === 200 || deleteWorkspaceResp.status === 404);
-  logger.info({
-    msg: `1. Complete validate & clean (if exists) workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${deleteWorkspaceResp.status}`,
-  });
+  logger.info({ msg: await getWorkspaceResp.text() });
 
   await zx.sleep(1000);
+  if (getWorkspaceResp.status === 200) {
+    return true;
+  } else if (getWorkspaceResp.status === 404) {
+    return false;
+  } else {
+    throw new Error(`Unexpected status code: ${getWorkspaceResp.status}`);
+  }
 }
 
-/**
- * Send api request to create new workspace
- */
 async function createWorkspace() {
-  const polygonPartWorkspaceBody = {
-    workspace: {
-      name: POLYGON_PARTS_WORKSPACE_NAME,
-    },
+  const createWorkspaceBody = {
+    name: WORKSPACE_NAME,
   };
 
-  const createWorkspaceResp = await zx.fetch(WORKSPACE_API_URL, {
+  const createWorkspaceResp = await zx.fetch(`${WORKSPACE_API_URL}`, {
     method: 'POST',
-    body: JSON.stringify(polygonPartWorkspaceBody),
+    body: JSON.stringify(createWorkspaceBody),
     headers: {
-      Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
       'Content-Type': 'application/json',
     },
   });
 
-  logger.debug({ msg: await createWorkspaceResp.text() });
-  assertEqual(createWorkspaceResp.status, 201);
+  logger.info({ msg: await createWorkspaceResp.text() });
+
+  assertOk(createWorkspaceResp.status === 201);
   logger.info({
-    msg: `2. Complete creation workspace ${POLYGON_PARTS_WORKSPACE_NAME} with status code: ${createWorkspaceResp.status}`,
+    msg: `Created workspace: ${WORKSPACE_NAME}  successfully`,
   });
 
   await zx.sleep(1000);
 }
 
 /**
- * Send api request to connect and create db connection by datastore of postgis type
+ * Send api to check if the workspace exists, if not create one
  */
-async function createPgDatastore() {
-  const dataStoreCreationBody = {
-    dataStore: {
-      name: DATA_STORE_NAME,
-      description: 'This store connect to polygon parts db',
-      connectionParameters: {
-        entry: [
-          { '@key': 'host', $: DATA_STORE_CREDENTIALS.host },
-          { '@key': 'port', $: DATA_STORE_CREDENTIALS.port },
-          { '@key': 'database', $: DATA_STORE_CREDENTIALS.database },
-          { '@key': 'user', $: DATA_STORE_CREDENTIALS.user },
-          { '@key': 'passwd', $: DATA_STORE_CREDENTIALS.password },
-          { '@key': 'dbtype', $: DATA_STORE_CREDENTIALS.dbtype },
-          { '@key': 'schema', $: DATA_STORE_CREDENTIALS.schema },
-          { '@key': 'Evictor run periodicity', $: '300' },
-          { '@key': 'Max open prepared statements', $: '50' },
-          { '@key': 'encode functions', $: 'true' },
-          { '@key': 'Batch insert size', $: '1' },
-          { '@key': 'preparedStatements', $: 'false' },
-          { '@key': 'Loose bbox', $: 'true' },
-          { '@key': 'SSL mode', $: DATA_STORE_CREDENTIALS.ssl },
-          { '@key': 'Estimated extends', $: 'true' },
-          { '@key': 'fetch size', $: '1000' },
-          { '@key': 'Expose primary keys', $: 'false' },
-          { '@key': 'validate connections', $: 'true' },
-          { '@key': 'Support on the fly geometry simplification', $: 'true' },
-          { '@key': 'Connection timeout', $: '20' },
-          { '@key': 'create database', $: 'false' },
-          {
-            '@key': 'Method used to simplify geometries',
-            $: 'PRESERVETOPOLOGY',
+async function checkDataStore() {
+  const getDataStoreResp = await zx.fetch(`${DATA_STORE_API_URL}/${DATASTORE_NAME}`, {
+    method: 'GET',
+  });
+
+  logger.debug({ msg: await getDataStoreResp.text() });
+
+  await zx.sleep(1000);
+  if (getDataStoreResp.status === 200) {
+    return true;
+  } else if (getDataStoreResp.status === 404) {
+    return false;
+  } else {
+    throw new Error(`Unexpected status code: ${getDataStoreResp.status}`);
+  }
+}
+
+async function createDataStore() {
+  const createDataStoreBody = {
+    name: DATASTORE_NAME,
+  };
+
+  const createDataStoreResp = await zx.fetch(`${DATA_STORE_API_URL}`, {
+    method: 'POST',
+    body: JSON.stringify(createDataStoreBody),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  logger.info({ msg: await createDataStoreResp.text() });
+
+  assertOk(createDataStoreResp.status === 201);
+  logger.info({
+    msg: `Created dataStore: ${DATASTORE_NAME}  successfully`,
+  });
+
+  await zx.sleep(1000);
+}
+
+/**
+ * compare get list configured and get available - if create feature types of all that are available and not configured
+ */
+async function checkFeatureTypes() {
+  // Extract layer names from both arrays
+  const availableNames = await getAvailableFeatureTypes();
+
+  if (availableNames.length === 0) {
+    logger.info(' There are no layers to publish! ');
+  } else {
+    const postRequests = availableNames.map(async (name) => {
+      try {
+        const response = await zx.fetch(FEATURE_TYPES_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          { '@key': 'min connections', $: '1' },
-          { '@key': 'max connections', $: '10' },
-          { '@key': 'Evictor tests per run', $: '3' },
-          { '@key': 'Test while idle', $: 'true' },
-          { '@key': 'Max connection idle time', $: '300' },
-        ],
-      },
-    },
-  };
-
-  const createDataStoreResp = await zx.fetch(DATA_STORE_API_URL, {
-    method: 'POST',
-    body: JSON.stringify(dataStoreCreationBody),
-
-    headers: {
-      Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
-      'Content-Type': 'application/json',
-    },
-  });
-
-  logger.debug({ msg: await createDataStoreResp.text() });
-  assertEqual(createDataStoreResp.status, 201);
-  logger.info({
-    msg: `3. Complete creation data-store ${DATA_STORE_NAME} with status code: ${createDataStoreResp.status}`,
-  });
-
+          body: JSON.stringify({ nativeName: name }),
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to POST for ${name}: ${response.status} ${response.statusText}`);
+        }
+        logger.info(`Successfully posted for ${name}`);
+      } catch (error) {
+        // Log detailed error message for the failed request
+        logger.error(`Error posting for ${name}:`, error);
+        throw error; // Re-throw the error to ensure it is caught by Promise.all
+      }
+    });
+    try {
+      await Promise.all(postRequests);
+      logger.info({ msg: 'All POST requests were successful' });
+    } catch (error) {
+      logger.error(`One or more POST requests failed: ${error}`);
+      throw Error(error);
+    }
+  }
   await zx.sleep(1000);
-}
-
-/**
- * Send api request with layer json configuration and create new WFS layer according dbstore
- */
-async function createWfsLayer() {
-  const layerBody = JSON.parse(fs.readFileSync(LAYER_BODY_JSON));
-  layerBody['featureType']['maxFeatures'] = MAX_FEATURES;
-  layerBody['featureType']['numDecimals'] = NUM_DECIMALS;
-  layerBody['featureType']['title'] = LAYER_TITLE_NAME;
-
-  const createLayerResp = await zx.fetch(FEATURE_TYPES_API_URL, {
-    method: 'POST',
-    body: JSON.stringify(layerBody),
-    headers: {
-      Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
-      'Content-Type': 'application/json',
-    },
-  });
-
-  logger.debug({ msg: await createLayerResp.text() });
-  assertEqual(createLayerResp.status, 201);
-  logger.info({
-    msg: `4. Complete creation layer ${LAYER_TITLE_NAME} with status code: ${createLayerResp.status}`,
-  });
 }
 
 /**
  * Send api request for global settings - restrict WFS protocol read-only (BASIC)
  */
 async function setWfsAsBasic() {
-  const setBody = {
-    wfs: {
-      serviceLevel: 'BASIC',
-    },
-  };
-
-  const setWfsResp = await zx.fetch(GLOBAL_WFS_SETTING_API_URL, {
+  const wfsModeResponse = await zx.fetch(GLOBAL_WFS_SETTING_API_URL, {
     method: 'PUT',
-    body: JSON.stringify(setBody),
     headers: {
-      Authorization: 'Basic ' + btoa(GEOSERVER_USER + ':' + GEOSERVER_PASS),
       'Content-Type': 'application/json',
     },
+    body: JSON.stringify({ serviceLevel: 'BASIC' }),
   });
 
-  logger.debug({ msg: await setWfsResp.text() });
-  assertEqual(setWfsResp.status, 200);
+  logger.info({ msg: await wfsModeResponse.text() });
+  assertEqual(wfsModeResponse.status, 200);
   logger.info({
-    msg: `5. Changed WFS service level into 'BASIC' - read only mode with status code: ${setWfsResp.status}`,
+    msg: `Set WFS service level into 'BASIC' - read only mode with status code: ${wfsModeResponse.status}`,
   });
+}
+
+async function getAvailableFeatureTypes() {
+  const listAvailableParams = new URLSearchParams();
+  listAvailableParams.append('list', 'available');
+  const getAvailableFeatureTypes = await zx.fetch(`${FEATURE_TYPES_API_URL}?` + listAvailableParams, {
+    method: 'GET',
+  });
+  const availableLayers = await getAvailableFeatureTypes.json();
+  const availableNames = availableLayers.filter((layer) => 
+    {
+      const isInBlacklist = FEATURE_TYPES_STRINGS_BLACK_LIST.includes(layer.name);
+      const matchesRegexBlacklist = FEATURE_TYPES_REGEX_BLACK_LIST.some((regex) => (new RegExp(regex)).test(layer.name));
+      return !isInBlacklist && !matchesRegexBlacklist;
+    }).map((layer) => layer.name);
+  logger.info({ msg: `availableNames: ${availableNames}` });
+  await zx.sleep(1000);
+  return availableNames;
+}
+
+async function getConfiguredFeatureTypes() {
+  const listConfiguredParams = new URLSearchParams();
+  listConfiguredParams.append('list', 'configured');
+  const getConfiguredFeatureTypes = await zx.fetch(`${FEATURE_TYPES_API_URL}?` + listConfiguredParams, {
+    method: 'GET',
+  });
+  const configuredLayers = await getConfiguredFeatureTypes.json();
+  const configuredNames = configuredLayers.map((layer) => layer.name);
+
+  logger.debug({ msg: `configuredNames: ${configuredNames}` });
+  await zx.sleep(1000);
+  return configuredNames;
+}
+
+function printAvocado() {
+  console.log(`
+                                                                                                    
+                                                                                                    
+                                                                                                    
+  ........  .............................                                    
+  ........  .............::::............                                    
+  ........  ..........+***++***++*+**=.......                                   
+.......... ........*+++*+=--------+****+=....     .                             
+.................***+=----------------+***+.........                            
+.......... ....-**+=--------------------++*+:.......                            
+..............+**+------:::::::::.:-------***:......                            
+.............+**=-----::::.::.::::::.:-----+*+-.....                            
+............=*++-----.:::::::::::::::::-----+**:....                            
+..........-**+-----.:::::::::::::::::::-----++*...                             
+..........***-----::::::::::::::::::::::-----**+..                             
+.........***-=---.:::::::::::::::::::::::----=**=. .                           
+........=**+----::::::::::::::::::::::::::----+*+........                      
+........**+----::.:::::::::::::::::::::.::-----***.......                      
+.......++*-----::::::::::::::::::::::::::::----=+*=.......                     
+......=+*=----::.:--::::::::::::::::.:--::::----++*:......                     
+.....=**+----:::+%%=.%:.:::::::::.::@%@..#.:-----*+*.....                      
+....-+++-----:..%%-*@%+.:::::::::.:=%%.@@%::.-----*+*....                      
+...-+*+-----:::::@@@%#::.::::::::::.*%%@@-::::-----+*+...                      
+..-*++-----:::.:::::.:::::::.::::::..:::::::..:-----++*......                  
+..***-----.::::::::::.::-%...::.%+::::::::::::::-----***.....                  
+.***-----..:::::::::::::::+@%%@*:::::::::::::::::----=***.... ..               
+.+**=----::::::::::::::::::::.:..::::::::::::::::::----++*-... ...              
+-**+----::::::::::::.:..:...::.::.:::::.:::::::::::-----+**.......              
+.+**-----.:::::::::::::.::**#**#***+:::.::::::::::::.----=**=......              
+:*++----:.::::::::::.::#******+++++***#::::.::::::::.:=---+**......              
+=+*=----:::::::::::.:*********++++++++***::.::::::::.:----+**:.....              
+***----:::::::::::.=************++++++++**-:.:::::::::-----**=.....              
+***----:::::::::::+***************+++++++**-.::::::::.-----**=.. ..              
+*+*----::::::.::::#******************++++*#*::::::::::-----**=.. ..              
++**-----:::::::::+#***********************#*-:::::::.:----=**=.. ..              
++*+-----:.:::::.:+##************************=:::::::.:----+**:....               
+-**+----:::::::.-=###***********************-::::::::-----**+......              
+:+**-----::::::.::###*********************#*.::::::::----=**=......              
+:-**+-----:::::.:--####******************#*::::::.::-----***.......              
+.::+**+-----.::::::--######*************#*#:::::::.:-----+++:...                  
+..::+*+=-----:::::.-::########**********#*..:.:::::-----+*+:. ..                  
+..:::+*++------::::::--:*##############+:::::::::------+**-.                      
+...:::=+**=------::::::-:::=*#####**=::::.:::::------=+**:...                     
+.:...:::***+-------:.:::::::::::::::::.::::.:-------*+++.....                     
+.....::::=***+--------:::::::::::::::::::---------+*+*:.....                      
+.......::::+*+*+------------::::::::-----------=*++*:.......                      
+.........::::=***++=------------------------=+*+**:..........                     
+............:::::=**+**+=----------------=+**++*-......                            
+..............::::::-++*+**+******++++++**+++:........                             
+.......... ...:::::::::=+***++*****+=:::...........                             
+...............::::::::::::::::::...............                             
+        ...............                                              
+        .............                                                
+                                                                     
+                                                                     
+`);
+
 }

@@ -71,6 +71,18 @@ Returns the cloud provider docker registry url from global if exists or from the
 {{- end -}}
 {{- end -}}
 
+{{/*
+Returns the cloud provider image pull secret name from global if exists or from the chart's values
+*/}}
+{{- define "geoserver.cloudProviderImagePullSecretName" -}}
+{{- if .Values.global.cloudProvider.imagePullSecretName }}
+    {{- .Values.global.cloudProvider.imagePullSecretName -}}
+{{- else if .Values.cloudProvider.imagePullSecretName -}}
+    {{- .Values.cloudProvider.imagePullSecretName -}}
+{{- end -}}
+{{- end -}}
+
+
 {{- define "geoserver.image" -}}
 {{- $registryName := include "geoserver.cloudProviderDockerRegistryUrl" . -}}
 {{- $repositoryName := .Values.image.geoserverRepository -}}
@@ -85,9 +97,3 @@ Returns the cloud provider docker registry url from global if exists or from the
 {{- printf "%s%s:%s" $registryName $repositoryName $tag -}}
 {{- end -}}
 
-{{/*
-Get the password secret.
-*/}}
-{{- define "geoserver.secretName" -}}
-{{- printf "%s" (include "geoserver.fullname" .) -}}
-{{- end -}}

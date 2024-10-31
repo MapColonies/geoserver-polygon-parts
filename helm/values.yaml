@@ -1,20 +1,20 @@
 global:
-  pullPolicy: Always
-  pullSecretName: acr-registry
   cloudProvider: {}
   environment: ''
-  authentication:
-    jwtPublicKeySecretName: map-colonies-jwks
-  db:
-    host: ""
-    name: ""
-    port: 5432
+  db: {}
   storage: {}
+  geoserver: {}
+  serviceUrls: {}
 
-cloudProvider: {}
+
+cloudProvider:
+  dockerRegistryUrl: my-registry-url.io
+  imagePullSecretName: 'my-registry-secret'
+
 
 ### Useful for umbrella deployments in cases which no need geoserver serving ###
 enabled: true
+imagePullPolicy: Always
 
 image:
   geoserverRepository: geoserver-os
@@ -24,15 +24,10 @@ image:
 
 updateInterval: 10000
 
-geoserverUser: admin
-
-
 replicaCount: 1
 
-nameOverride: ""
+nameOverride: 
 fullnameOverride: pp-geoserver
-
-geoserverPassword: geoserver
 
 initialMemory: "128M"
 maxMemory: "756M"
@@ -41,8 +36,21 @@ storage:
   fs:
     internalPvc:
       name: ""
-      mountPath: ""
+      mountPath: "/data_dir"
       geoserverDataDirSubPath: ""
+geoserver:
+  secrets:
+    createSecret: true
+  auth:
+    password: ""
+    username: ""
+  workspace: ""
+  dataStore: ""
+serviceUrls:
+  geoserverUrl: ""
+  geoserverApiUrl: ""
+
+
 
 readiness:
   path: "/geoserver" # change it according to workspace name changing
@@ -126,27 +134,23 @@ sideCar:
   env:
     logLevel: "info"
     logPretty: "false"
-    ssl:
-      CA_DIR: /opt/certs/ca/
-      KEY_DIR: /opt/certs/key/
-      CERT_DIR: /opt/certs/cert/
-      CA_FILE_LOCATION: /opt/certs/ca/ca.pem
-      KEY_FILE_LOCATION: /opt/certs/key/key.pem
-      CERT_FILE_LOCATION: /opt/certs/cert/cert.pem
-  
-    dataStore:
-      user: "postgres"
-      password: "postgres"
-      dbType: "postgis"
-      schema: "polygon_parts"
-      name: "polygon_parts"
-      ssl: 'DISABLE'
-    polygonPartsWorkspaceName: "polygon_parts" # remember update also the readiness path in case of change
-    geoserverBaseUrl: "http://localhost:8080/geoserver"
-    layer:
-      maxFeatures: 0
-      numDecimals: 0
-      titleName: "polygon_parts"
+    # ssl:
+    #   CA_DIR: /opt/certs/ca/
+    #   KEY_DIR: /opt/certs/key/
+    #   CERT_DIR: /opt/certs/cert/
+    #   CA_FILE_LOCATION: /opt/certs/ca/ca.pem
+    #   KEY_FILE_LOCATION: /opt/certs/key/key.pem
+    #   CERT_FILE_LOCATION: /opt/certs/cert/cert.pem
+
+    featureTypesBlackLists:
+      tableNamesRegex:
+        - '.*_parts'
+      tableNameStrings:
+        - migrations
+        - parts
+        - polygon_parts    
+
+
 
 nginx:
   enabled: true

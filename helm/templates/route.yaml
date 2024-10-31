@@ -2,7 +2,7 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: {{ template "geoserver.fullname" . }}
+  name: {{ template "route.fullname" . }}
 spec:
   path:  {{ .Values.route.path }}
   to:

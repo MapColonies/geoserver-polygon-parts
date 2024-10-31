@@ -130,4 +130,4 @@ dist
 .pnp.*
 local.values.yaml
 
-*Chart.lock
+*.lock

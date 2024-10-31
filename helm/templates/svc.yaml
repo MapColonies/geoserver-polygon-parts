@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "geoserver.fullname" . }}
+  name: {{ template "service.fullname" . }}
   labels:
 {{ include "geoserver.labels" . | indent 4 }}
   annotations:

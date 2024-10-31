@@ -18,9 +18,6 @@ stateDiagram-v2
   createWfsLayer --> [*]
 ```
 
-> [!IMPORTANT]
-> Layer properties use static [artifact json file](../artifacts/README.md) that include relevant properties, attributes, mappings and etc..
-
 <br>
 
 ## Environment Variables for configuration
