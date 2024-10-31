@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/MapColonies/geoserver-polygon-parts/compare/v1.1.5...v2.0.0) (2024-10-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* Update side car and helm (MAPCO-4963) (#9)
+
+### Features
+
+* Update side car and helm (MAPCO-4963) ([#9](https://github.com/MapColonies/geoserver-polygon-parts/issues/9)) ([b14729c](https://github.com/MapColonies/geoserver-polygon-parts/commit/b14729c61c4319aa6562c57c82dc38b2fe347532))
+
 ### [1.1.5](https://github.com/MapColonies/geoserver-polygon-parts/compare/v1.1.4...v1.1.5) (2024-10-15)
 
 
