@@ -134,13 +134,13 @@ sideCar:
   env:
     logLevel: "info"
     logPretty: "false"
-    ssl:
-      CA_DIR: /opt/certs/ca/
-      KEY_DIR: /opt/certs/key/
-      CERT_DIR: /opt/certs/cert/
-      CA_FILE_LOCATION: /opt/certs/ca/ca.pem
-      KEY_FILE_LOCATION: /opt/certs/key/key.pem
-      CERT_FILE_LOCATION: /opt/certs/cert/cert.pem
+    # ssl:
+    #   CA_DIR: /opt/certs/ca/
+    #   KEY_DIR: /opt/certs/key/
+    #   CERT_DIR: /opt/certs/cert/
+    #   CA_FILE_LOCATION: /opt/certs/ca/ca.pem
+    #   KEY_FILE_LOCATION: /opt/certs/key/key.pem
+    #   CERT_FILE_LOCATION: /opt/certs/cert/cert.pem
 
     featureTypesBlackLists:
       tableNamesRegex:
