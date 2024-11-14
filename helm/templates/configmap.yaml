@@ -19,6 +19,7 @@ data:
   GEOSERVER_DATA_DIR: {{ $fs.internalPvc.mountPath | quote }}
   GEOSERVER_BASE_URL: {{ $serviceUrls.geoserverUrl | quote }}
   GEOSERVER_API_BASE_URL : {{ $serviceUrls.geoserverApiUrl | quote }}
+  CATALOG_MANAGER_SERVICE_URL : {{ $serviceUrls.catalogManager | quote }}
   WORKSPACE_NAME: {{ $geoserver.workspace | quote }}
   DATASTORE_NAME: {{ $geoserver.dataStore | quote }}
   FEATURE_TYPES_STRINGS_BLACK_LIST: {{ .Values.sideCar.env.featureTypesBlackLists.tableNameStrings | toJson | quote }}

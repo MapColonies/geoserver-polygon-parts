@@ -28,17 +28,18 @@
     }
   },
   "dependencies": {
+    "@map-colonies/js-logger": "^1.0.1",
+    "@map-colonies/mc-model-types": "^17.9.3",
     "dotenv": "^16.4.5",
     "env-var": "^7.5.0",
-    "zx": "^8.1.2",
-    "@map-colonies/js-logger": "^1.0.1"
+    "zx": "^8.1.2"
   },
   "devDependencies": {
-    "standard-version": "^9.5.0",
-    "@map-colonies/standard-version-update-helm-version": "^2.0.1",
-    "eslint": "^8.43.0",
     "@map-colonies/eslint-config": "^4.0.0",
     "@map-colonies/prettier-config": "0.0.1",
-    "prettier": "^2.8.8"
+    "@map-colonies/standard-version-update-helm-version": "^2.0.1",
+    "eslint": "^8.43.0",
+    "prettier": "^2.8.8",
+    "standard-version": "^9.5.0"
   }
 }

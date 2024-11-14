@@ -49,6 +49,7 @@ geoserver:
 serviceUrls:
   geoserverUrl: ""
   geoserverApiUrl: ""
+  catalogManager: ""
 
 
 
