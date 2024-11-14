@@ -3,7 +3,7 @@ import { strictEqual as assertEqual, ok as assertOk } from 'assert';
 import env from 'env-var';
 import 'dotenv/config';
 import jsLogger from '@map-colonies/js-logger';
-import { ProductType} from '@map-colonies/mc-model-types';
+import { ProductType } from '@map-colonies/mc-model-types';
 
 // *******************************************************************
 // *************** initialization of environ variables ***************
@@ -27,6 +27,7 @@ const FEATURE_TYPES_REGEX_BLACK_LIST = env.get('FEATURE_TYPES_REGEX_BLACK_LIST')
 const WORKSPACE_API_URL = `${GEOSERVER_API_BASE_URL}/workspaces`;
 const DATA_STORE_API_URL = `${GEOSERVER_API_BASE_URL}/dataStores/${WORKSPACE_NAME}`;
 const FEATURE_TYPES_API_URL = `${GEOSERVER_API_BASE_URL}/featureTypes/${WORKSPACE_NAME}/${DATASTORE_NAME}`;
+const CATALOG_MANAGER_FIND_URL = `${CATALOG_MANAGER_SERVICE_URL}/records/find`;
 
 const GLOBAL_WFS_SETTING_API_URL = `${GEOSERVER_API_BASE_URL}/services/wfs/settings`;
 
@@ -190,12 +191,12 @@ async function checkFeatureTypes() {
           body: JSON.stringify({ nativeName: entity.nativeName, name: entity.layerName }),
         });
         if (!response.ok) {
-          throw new Error(`Failed to POST for ${JSON.stringify(entity)}: ${response.status} ${response.statusText}`);
+          throw new Error(`Failed to POST for table:${entity.nativeName} with layerName: ${entity.name}: ${response.status} ${response.statusText}`);
         }
-        logger.info(`Successfully posted for ${JSON.stringify(entity)}`);
+        logger.info(`Successfully posted for table:${entity.nativeName} with layerName: ${entity.name}`);
       } catch (error) {
         // Log detailed error message for the failed request
-        logger.error(`Error posting for ${JSON.stringify(entity)}:`, error);
+        logger.error(`Error posting for table:${entity.nativeName} with layerName: ${entity.name}:`, error);
         throw error; // Re-throw the error to ensure it is caught by Promise.all
       }
     });
@@ -266,7 +267,7 @@ async function mapNativeNameToLayerName(availableNames) {
   const layersMapping = await Promise.all(availableNames.map(async (nativeName) => {
     const { productId, productType } = splitProductIdAndType(nativeName);
     try {
-      const response = await zx.fetch(CATALOG_MANAGER_SERVICE_URL, {
+      const response = await zx.fetch(CATALOG_MANAGER_FIND_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
