@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.1](https://github.com/MapColonies/geoserver-polygon-parts/compare/v2.0.0...v2.0.1) (2024-11-14)
+
+
+### Bug Fixes
+
+* get LayerName as original productId and Type from catalog(MAPCO-5241) ([#10](https://github.com/MapColonies/geoserver-polygon-parts/issues/10)) ([b118dd9](https://github.com/MapColonies/geoserver-polygon-parts/commit/b118dd9ec543afc85af6fe69fa19070a3bdd1cd9))
+
 ## [2.0.0](https://github.com/MapColonies/geoserver-polygon-parts/compare/v1.1.5...v2.0.0) (2024-10-31)
 
 
