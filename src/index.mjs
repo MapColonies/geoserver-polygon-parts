@@ -16,7 +16,7 @@ const logger = jsLogger.default({
 const GEOSERVER_BASE_URL = env.get('GEOSERVER_BASE_URL').default('http://localhost:8080/geoserver').asString();
 
 const GEOSERVER_API_BASE_URL = env.get('GEOSERVER_API_BASE_URL').default('http://localhost:8081').asString();
-const CATALOG_MANAGER_SERVICE_URL = env.get('CATALOG_MANAGER_SERVICE_URL').default('http://localhost:8082/records/find').asString();
+const CATALOG_MANAGER_SERVICE_URL = env.get('CATALOG_MANAGER_SERVICE_URL').default('http://localhost:8082').asString();
 
 const WORKSPACE_NAME = env.get('WORKSPACE_NAME').default('polygonParts').asString();
 const DATASTORE_NAME = env.get('DATASTORE_NAME').default('polygonParts').asString();
