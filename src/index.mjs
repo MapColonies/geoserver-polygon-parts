@@ -191,12 +191,12 @@ async function checkFeatureTypes() {
           body: JSON.stringify({ nativeName: entity.nativeName, name: entity.layerName }),
         });
         if (!response.ok) {
-          throw new Error(`Failed to POST for table:${entity.nativeName} with layerName: ${entity.name}: ${response.status} ${response.statusText}`);
+          throw new Error(`Failed to POST for table:${entity.nativeName} with layerName: ${entity.layerName}: ${response.status} ${response.statusText}`);
         }
-        logger.info(`Successfully posted for table:${entity.nativeName} with layerName: ${entity.name}`);
+        logger.info(`Successfully posted for table:${entity.nativeName} with layerName: ${entity.layerName}`);
       } catch (error) {
         // Log detailed error message for the failed request
-        logger.error(`Error posting for table:${entity.nativeName} with layerName: ${entity.name}:`, error);
+        logger.error(`Error posting for table:${entity.nativeName} with layerName: ${entity.layerName}:`, error);
         throw error; // Re-throw the error to ensure it is caught by Promise.all
       }
     });
