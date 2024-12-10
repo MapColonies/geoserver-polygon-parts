@@ -1,6 +1,7 @@
 {{- $fs := (include "common.fs.merged" .) | fromYaml }}
 {{- $cloudProviderImagePullSecretName := include "geoserver.cloudProviderImagePullSecretName" . -}}
 {{- $deploymentName := include "deployment.fullname" . }}
+{{- $metrics := (include "common.metrics.merged" .) | fromYaml }}
 
 apiVersion: apps/v1
 kind: Deployment
@@ -21,9 +22,13 @@ spec:
       labels:
 {{ include "geoserver.labels" . | indent 8}}
       annotations:
-        {{- with .Values.podAnnotations }}
-        {{- (tpl . $) | indent 8 }}
-        {{- end }}
+      {{- if $metrics.enabled }}
+        prometheus.io/port: {{ .Values.env.targetPort | quote }}
+        prometheus.io/scrape: {{ $metrics.prometheus.scrape | quote }}
+      {{- end }}
+      {{- if .Values.podAnnotations }}
+      {{- toYaml .Values.podAnnotations | nindent 8 }}
+      {{- end }}
     spec:
     {{- if $cloudProviderImagePullSecretName }}
       imagePullSecrets:

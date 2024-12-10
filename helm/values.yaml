@@ -2,6 +2,8 @@ global:
   cloudProvider: {}
   environment: ''
   db: {}
+  tracing: {}
+  metrics: {}
   storage: {}
   geoserver: {}
   serviceUrls: {}
@@ -11,6 +13,12 @@ cloudProvider:
   dockerRegistryUrl: my-registry-url.io
   imagePullSecretName: 'my-registry-secret'
 
+tracing:
+  enabled: false
+metrics:
+  enabled: false
+  prometheus:
+    scrape: false
 
 ### Useful for umbrella deployments in cases which no need geoserver serving ###
 enabled: true
