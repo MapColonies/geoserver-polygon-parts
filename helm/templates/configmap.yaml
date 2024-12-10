@@ -3,6 +3,8 @@
 {{- $fs := (include "common.fs.merged" .) | fromYaml }}
 {{- $geoserver := (include "common.geoserver.merged" .) | fromYaml }}
 {{- $serviceUrls := (include "common.serviceUrls.merged" .) | fromYaml }}
+{{- $tracing := (include "common.tracing.merged" .) | fromYaml }}
+{{- $metrics := (include "common.metrics.merged" .) | fromYaml }}
 
 apiVersion: v1
 kind: ConfigMap
@@ -25,3 +27,5 @@ data:
   FEATURE_TYPES_STRINGS_BLACK_LIST: {{ .Values.sideCar.env.featureTypesBlackLists.tableNameStrings | toJson | quote }}
   FEATURE_TYPES_REGEX_BLACK_LIST: {{ .Values.sideCar.env.featureTypesBlackLists.tableNamesRegex | toJson | quote }}
   PGAPPNAME: {{ $chartName }}
+  TELEMETRY_TRACING_ENABLED: {{ $tracing.enabled | quote }}
+  TELEMETRY_METRICS_ENABLED: {{ $metrics.enabled | quote }}
