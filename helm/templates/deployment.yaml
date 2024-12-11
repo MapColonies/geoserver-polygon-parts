@@ -23,7 +23,7 @@ spec:
 {{ include "geoserver.labels" . | indent 8}}
       annotations:
       {{- if $metrics.enabled }}
-        prometheus.io/port: {{ .Values.env.targetPort | quote }}
+        prometheus.io/port: {{ $metrics.prometheus.port | quote }}
         prometheus.io/scrape: {{ $metrics.prometheus.scrape | quote }}
       {{- end }}
       {{- if .Values.podAnnotations }}
@@ -47,6 +47,9 @@ spec:
             memory: {{ .Values.resources.limits.memory }}
             cpu: {{ .Values.resources.limits.cpu }}
         {{- end }}
+        envFrom:
+          - configMapRef:
+              name: {{ template "configmap.fullname" . }}
         env:
           {{- if $fs.internalPvc.mountPath }}
           - name: GEOSERVER_DATA_DIR
