@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.0](https://github.com/MapColonies/geoserver-polygon-parts/compare/v2.0.2...v2.1.0) (2024-12-11)
+
+
+### Features
+
+* telemetry envs ([#12](https://github.com/MapColonies/geoserver-polygon-parts/issues/12)) ([1170b7a](https://github.com/MapColonies/geoserver-polygon-parts/commit/1170b7acefd46daf8ea9646bf97483d693ab8c30))
+
 ### [2.0.2](https://github.com/MapColonies/geoserver-polygon-parts/compare/v2.0.1...v2.0.2) (2024-11-18)
 
 
