@@ -175,6 +175,7 @@ nginx:
   targetPort: 8080
   servicePort: 8080
   nodePort: 30001
+  clientMaxBodySize: 50m
   
   authorization:
     enabled: true
