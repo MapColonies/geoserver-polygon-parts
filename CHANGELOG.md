@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.1.2](https://github.com/MapColonies/geoserver-polygon-parts/compare/v2.1.1...v2.1.2) (2024-12-15)
+
+
+### Bug Fixes
+
+* client max body size ([#14](https://github.com/MapColonies/geoserver-polygon-parts/issues/14)) ([34907b9](https://github.com/MapColonies/geoserver-polygon-parts/commit/34907b98a3b56fe61fad45e7ccf3a9c324accd3e))
+
 ### [2.1.1](https://github.com/MapColonies/geoserver-polygon-parts/compare/v2.1.0...v2.1.1) (2024-12-11)
 
 
