@@ -1,4 +1,5 @@
 import * as chokidar from 'chokidar';
+import { stat } from 'fs/promises';
 import * as zx from 'zx';
 import { strictEqual as assertEqual, ok as assertOk } from 'assert';
 import env from 'env-var';
@@ -21,12 +22,13 @@ const CATALOG_MANAGER_SERVICE_URL = env.get('CATALOG_MANAGER_SERVICE_URL').defau
 
 const WORKSPACE_NAME = env.get('WORKSPACE_NAME').default('polygonParts').asString();
 const DATASTORE_NAME = env.get('DATASTORE_NAME').default('polygonParts').asString();
-const DATASTORE_PATH = env.get('DATASTORE_PATH').default('/data_dir/workspaces/polygonParts/polygonParts').asString();
+const DATASTORE_PATH = env.get('DATASTORE_PATH').default('/home/razbro/Desktop/test').asString();
 
 const FEATURE_TYPES_STRINGS_BLACK_LIST = env.get('FEATURE_TYPES_STRINGS_BLACK_LIST').default(['*_parts']).asJson();
 const FEATURE_TYPES_REGEX_BLACK_LIST = env.get('FEATURE_TYPES_REGEX_BLACK_LIST').default(['migrations', 'parts', 'polygon_parts', 'test_view']).asJson();
 
 const WORKSPACE_API_URL = `${GEOSERVER_API_BASE_URL}/workspaces`;
+const GEOSERVER_RELOAD_URL = `${GEOSERVER_API_BASE_URL}/geoserver/rest/reload`;
 const DATA_STORE_API_URL = `${GEOSERVER_API_BASE_URL}/dataStores/${WORKSPACE_NAME}`;
 const FEATURE_TYPES_API_URL = `${GEOSERVER_API_BASE_URL}/featureTypes/${WORKSPACE_NAME}/${DATASTORE_NAME}`;
 const CATALOG_MANAGER_FIND_URL = `${CATALOG_MANAGER_SERVICE_URL}/records/find`;
@@ -60,21 +62,59 @@ await checkFeatureTypes();
 logger.info({ msg: `Env ready: Completed Geoserver initialization` });
 
 //listen to nfs changes
-const watcher = chokidar.watch(DATASTORE_PATH);
-watcher.on('add', path => {
-  logger.info({ msg: `File added: ${path}` });
-  rebootService();
-})
-  .on('unlink', path => {
-    logger.info({ msg: `File removed: ${path}` });
-    rebootService();
-  })
+if (await isDataDirExists()) {
+  const watcher = chokidar.watch(DATASTORE_PATH, {
+    persistent: true,
+    ignoreInitial: true,
+    usePolling: true,       // use polling to detect changes - optimized for NFS
+    interval: 1000,         // how often to poll (in ms)
+    binaryInterval: 1000,
+  });
 
+  logger.info({ msg: `starts watching ${DATASTORE_PATH} path` });
+  watcher.on('add', path => {
+    logger.info({ msg: `File added: ${path}` });
+    reloadGeoServer();
+  })
+    .on('unlink', path => {
+      logger.info({ msg: `File removed: ${path}` });
+      reloadGeoServer();
+    })
+} else {
+  logger.error({ msg: `Data directory ${DATASTORE_PATH} does not exist or is not accessible` });
+  throw new Error(`Data directory ${DATASTORE_PATH} does not exist or is not accessible`);
+}
 // *******************************************************************
 
-function rebootService() {
-  logger.info({ msg: 'Triggering pod restart...' });
-  process.exit(1); // Kubernetes will restart the pod if it's in a Deployment/StatefulSet
+async function reloadGeoServer() {
+  try {
+    logger.info({ msg: `Triggering geoserver reload on ${GEOSERVER_RELOAD_URL}...` });
+    await zx.fetch(`${GEOSERVER_RELOAD_URL}`, {
+      method: 'POST',
+    });
+  } catch (error) {
+    logger.warn({
+      msg: `Failed connect to reload geoserver with error ${error}, will retry again`,
+    });
+    await zx.sleep(15000);
+  }
+}
+
+async function isDataDirExists() {
+  try {
+    const stats = await stat(DATASTORE_PATH);
+    const isDirectory = stats.isDirectory()
+    if (isDirectory) {
+      logger.info({ msg: `successfully checked ${DATASTORE_PATH} is a directory` });
+      return true;
+    } else {
+      logger.error({ msg: `${DATASTORE_PATH} is not a directory` });
+      return false;
+    }
+  } catch (err) {
+    logger.error({ msg: `Error checking data directory ${DATASTORE_PATH}: ${err.message}` });
+    throw err;
+  }
 }
 
 /**
