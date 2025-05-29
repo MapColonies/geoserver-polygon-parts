@@ -126,6 +126,10 @@ spec:
         {{- end }}
       - name: {{ template "geoserver.fullname" . }}-init
         image: {{ include "geoserver.sidecarImage" . }}
+        volumeMounts:
+          - name: data-dir-volume
+            mountPath: {{ $fs.internalPvc.mountPath}}
+            subPath: {{ $fs.internalPvc.geoserverDataDirSubPath}}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         resources: {{- toYaml .Values.sidecarResources | nindent 10 }}
         env:
