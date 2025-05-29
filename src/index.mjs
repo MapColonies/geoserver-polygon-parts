@@ -1,3 +1,4 @@
+import * as chokidar from 'chokidar';
 import * as zx from 'zx';
 import { strictEqual as assertEqual, ok as assertOk } from 'assert';
 import env from 'env-var';
@@ -20,9 +21,10 @@ const CATALOG_MANAGER_SERVICE_URL = env.get('CATALOG_MANAGER_SERVICE_URL').defau
 
 const WORKSPACE_NAME = env.get('WORKSPACE_NAME').default('polygonParts').asString();
 const DATASTORE_NAME = env.get('DATASTORE_NAME').default('polygonParts').asString();
+const DATASTORE_PATH = env.get('DATASTORE_PATH').default('/data_dir/workspaces/polygonParts/polygonParts').asString();
 
 const FEATURE_TYPES_STRINGS_BLACK_LIST = env.get('FEATURE_TYPES_STRINGS_BLACK_LIST').default(['*_parts']).asJson();
-const FEATURE_TYPES_REGEX_BLACK_LIST = env.get('FEATURE_TYPES_REGEX_BLACK_LIST').default(['migrations','parts','polygon_parts','test_view']).asJson();
+const FEATURE_TYPES_REGEX_BLACK_LIST = env.get('FEATURE_TYPES_REGEX_BLACK_LIST').default(['migrations', 'parts', 'polygon_parts', 'test_view']).asJson();
 
 const WORKSPACE_API_URL = `${GEOSERVER_API_BASE_URL}/workspaces`;
 const DATA_STORE_API_URL = `${GEOSERVER_API_BASE_URL}/dataStores/${WORKSPACE_NAME}`;
@@ -56,10 +58,24 @@ if (!dataStoreExists) {
 await checkFeatureTypes();
 
 logger.info({ msg: `Env ready: Completed Geoserver initialization` });
-printAvocado();
-setInterval(() => { printAvocado() }, 10000000);
+
+//listen to nfs changes
+const watcher = chokidar.watch(DATASTORE_PATH);
+watcher.on('add', path => {
+  logger.info({ msg: `File added: ${path}` });
+  rebootService();
+})
+  .on('unlink', path => {
+    logger.info({ msg: `File removed: ${path}` });
+    rebootService();
+  })
 
 // *******************************************************************
+
+function rebootService() {
+  logger.info({ msg: 'Triggering pod restart...' });
+  process.exit(1); // Kubernetes will restart the pod if it's in a Deployment/StatefulSet
+}
 
 /**
  * This function will check periodically till detect that geoserver is up and than exit the method
@@ -176,7 +192,7 @@ async function createDataStore() {
 async function checkFeatureTypes() {
 
   const availableNames = await getAvailableFeatureTypes();
-  const mappedLayerNames= await mapNativeNameToLayerName(availableNames);
+  const mappedLayerNames = await mapNativeNameToLayerName(availableNames);
 
   if (mappedLayerNames.length === 0) {
     logger.info(' There are no layers to publish! ');
@@ -237,12 +253,11 @@ async function getAvailableFeatureTypes() {
     method: 'GET',
   });
   const availableLayers = await getAvailableFeatureTypes.json();
-  const availableNames = availableLayers.filter((layer) => 
-    {
-      const isInBlacklist = FEATURE_TYPES_STRINGS_BLACK_LIST.includes(layer.name);
-      const matchesRegexBlacklist = FEATURE_TYPES_REGEX_BLACK_LIST.some((regex) => (new RegExp(regex)).test(layer.name));
-      return !isInBlacklist && !matchesRegexBlacklist;
-    }).map((layer) => layer.name);
+  const availableNames = availableLayers.filter((layer) => {
+    const isInBlacklist = FEATURE_TYPES_STRINGS_BLACK_LIST.includes(layer.name);
+    const matchesRegexBlacklist = FEATURE_TYPES_REGEX_BLACK_LIST.some((regex) => (new RegExp(regex)).test(layer.name));
+    return !isInBlacklist && !matchesRegexBlacklist;
+  }).map((layer) => layer.name);
   logger.info({ msg: `availableNames: ${availableNames}` });
   await zx.sleep(1000);
   return availableNames;
@@ -263,7 +278,7 @@ async function getConfiguredFeatureTypes() {
 }
 
 async function mapNativeNameToLayerName(availableNames) {
-  const configuredLayers= await getConfiguredFeatureTypes();
+  const configuredLayers = await getConfiguredFeatureTypes();
   const layersMapping = await Promise.all(availableNames.map(async (nativeName) => {
     const { productId, productType } = splitProductIdAndType(nativeName);
     try {
@@ -282,12 +297,12 @@ async function mapNativeNameToLayerName(availableNames) {
       const fetchedProductType = layerDetails[0].metadata.productType;
 
       const layerName = `${fetchedProductId}-${fetchedProductType}`;
-      
+
       /* getAvailable returns the tableNames. 
       Due to the fact that we are publishing the features in a different name from 
       the tableName, the available returns  some already published layers
       so we want to get the configuredLayers and check that the layer name is not in it*/
-      if(!configuredLayers.includes(layerName)){
+      if (!configuredLayers.includes(layerName)) {
         return { nativeName, layerName };
       }
       return undefined;
@@ -307,7 +322,7 @@ function splitProductIdAndType(name) {
 
   const productId = name.slice(0, lastUnderscoreIndex);
   const productType = findProductType(name.slice(lastUnderscoreIndex + 1));
-  
+
   return { productId, productType };
 }
 
@@ -317,9 +332,9 @@ function findProductType(input) {
 
   // Loop through the enum values
   return Object.values(ProductType).find(value => {
-      // Normalize the enum value by converting it to lowercase and removing underscores
-      const normalizedEnumValue = value.toLowerCase().replace(/_/g, '');
-      return normalizedEnumValue === formattedInput;
+    // Normalize the enum value by converting it to lowercase and removing underscores
+    const normalizedEnumValue = value.toLowerCase().replace(/_/g, '');
+    return normalizedEnumValue === formattedInput;
   });
 }
 
