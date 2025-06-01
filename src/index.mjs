@@ -15,20 +15,23 @@ const logger = jsLogger.default({
   prettyPrint: env.get('LOG_PRETTY').default('false').asBool(),
 });
 
+const GEOSERVER_LOCAL_PORT = '8080'; // Default port for local GeoServer instance, hard coded in deployment.yaml containerPort
+const POLLING_INTERVAL = env.get('POLLING_INTERVAL').default(300).asIntPositive(); // Polling interval in milliseconds
 const GEOSERVER_BASE_URL = env.get('GEOSERVER_BASE_URL').default('http://localhost:8080/geoserver').asString();
+const GEOSERVER_LOCAL_BASE_URL = `http://localhost:${GEOSERVER_LOCAL_PORT}/geoserver`;
 
 const GEOSERVER_API_BASE_URL = env.get('GEOSERVER_API_BASE_URL').default('http://localhost:8081').asString();
 const CATALOG_MANAGER_SERVICE_URL = env.get('CATALOG_MANAGER_SERVICE_URL').default('http://localhost:8082').asString();
 
 const WORKSPACE_NAME = env.get('WORKSPACE_NAME').default('polygonParts').asString();
 const DATASTORE_NAME = env.get('DATASTORE_NAME').default('polygonParts').asString();
-const DATASTORE_PATH = env.get('DATASTORE_PATH').default('/home/razbro/Desktop/test').asString();
+const DATASTORE_PATH = env.get('DATASTORE_PATH').default('/data_dir/workspaces/polygonParts/polygonParts').asString();
 
 const FEATURE_TYPES_STRINGS_BLACK_LIST = env.get('FEATURE_TYPES_STRINGS_BLACK_LIST').default(['*_parts']).asJson();
 const FEATURE_TYPES_REGEX_BLACK_LIST = env.get('FEATURE_TYPES_REGEX_BLACK_LIST').default(['migrations', 'parts', 'polygon_parts', 'test_view']).asJson();
 
 const WORKSPACE_API_URL = `${GEOSERVER_API_BASE_URL}/workspaces`;
-const GEOSERVER_RELOAD_URL = `${GEOSERVER_API_BASE_URL}/geoserver/rest/reload`;
+const GEOSERVER_LOCAL_RELOAD_URL = `${GEOSERVER_LOCAL_BASE_URL}/rest/reload`;
 const DATA_STORE_API_URL = `${GEOSERVER_API_BASE_URL}/dataStores/${WORKSPACE_NAME}`;
 const FEATURE_TYPES_API_URL = `${GEOSERVER_API_BASE_URL}/featureTypes/${WORKSPACE_NAME}/${DATASTORE_NAME}`;
 const CATALOG_MANAGER_FIND_URL = `${CATALOG_MANAGER_SERVICE_URL}/records/find`;
@@ -67,8 +70,8 @@ if (await isDataDirExists()) {
     persistent: true,
     ignoreInitial: true,
     usePolling: true,       // use polling to detect changes - optimized for NFS
-    interval: 1000,         // how often to poll (in ms)
-    binaryInterval: 1000,
+    interval: POLLING_INTERVAL,         // how often to poll (in ms)
+    binaryInterval: POLLING_INTERVAL,
   });
 
   logger.info({ msg: `starts watching ${DATASTORE_PATH} path` });
@@ -88,9 +91,12 @@ if (await isDataDirExists()) {
 
 async function reloadGeoServer() {
   try {
-    logger.info({ msg: `Triggering geoserver reload on ${GEOSERVER_RELOAD_URL}...` });
-    await zx.fetch(`${GEOSERVER_RELOAD_URL}`, {
+    logger.info({ msg: `Triggering geoserver reload on ${GEOSERVER_LOCAL_RELOAD_URL}...` });
+    await zx.fetch(`${GEOSERVER_LOCAL_RELOAD_URL}`, {
       method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from('admin:geoserver').toString('base64'),
+      },
     });
   } catch (error) {
     logger.warn({

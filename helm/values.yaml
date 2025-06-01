@@ -145,6 +145,8 @@ sideCar:
   env:
     logLevel: "info"
     logPretty: "false"
+    pollingInterval: 300
+    datastorePath: "workspaces/polygonParts/polygonParts"
     # ssl:
     #   CA_DIR: /opt/certs/ca/
     #   KEY_DIR: /opt/certs/key/
