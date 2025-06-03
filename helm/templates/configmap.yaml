@@ -19,8 +19,7 @@ data:
   INITIAL_MEMORY: {{ .Values.initialMemory | default "128M" | quote }}
   MAX_MEMORY: {{ .Values.maxMemory | default "756M" | quote }}
   GEOSERVER_DATA_DIR: {{ $fs.internalPvc.mountPath | quote }}
-  DATASTORE_PATH: {{ printf "%s%s" $fs.internalPvc.mountPath .Values.sideCar.env.datastorePath | quote }}
-  POLLING_INTERVAL: {{ .Values.sideCar.env.pollingInterval | default 300 | quote }}
+  POLLING_INTERVAL: {{ .Values.sideCar.env.pollingIntervalMs | default 300 | quote }}
   GEOSERVER_BASE_URL: {{ $serviceUrls.geoserverUrl | quote }}
   GEOSERVER_API_BASE_URL : {{ $serviceUrls.geoserverApiUrl | quote }}
   CATALOG_MANAGER_SERVICE_URL : {{ $serviceUrls.catalogManager | quote }}

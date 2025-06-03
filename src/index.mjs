@@ -25,11 +25,14 @@ const CATALOG_MANAGER_SERVICE_URL = env.get('CATALOG_MANAGER_SERVICE_URL').defau
 
 const WORKSPACE_NAME = env.get('WORKSPACE_NAME').default('polygonParts').asString();
 const DATASTORE_NAME = env.get('DATASTORE_NAME').default('polygonParts').asString();
-const DATASTORE_PATH = env.get('DATASTORE_PATH').default('/data_dir/workspaces/polygonParts/polygonParts').asString();
+const GEOSERVER_DATA_DIR = env.get('GEOSERVER_DATA_DIR').default('/data_dir').asString();
+const DATASTORE_PATH = `${GEOSERVER_DATA_DIR}/workspaces/${WORKSPACE_NAME}/${DATASTORE_NAME}`;
 
 const FEATURE_TYPES_STRINGS_BLACK_LIST = env.get('FEATURE_TYPES_STRINGS_BLACK_LIST').default(['*_parts']).asJson();
 const FEATURE_TYPES_REGEX_BLACK_LIST = env.get('FEATURE_TYPES_REGEX_BLACK_LIST').default(['migrations', 'parts', 'polygon_parts', 'test_view']).asJson();
 
+const GEOSERVER_USER = env.get('GEOSERVER_ADMIN_USER').default('admin').asString();
+const GEOSERVER_PASS = env.get('GEOSERVER_ADMIN_PASSWORD').default('admin').asString();
 const WORKSPACE_API_URL = `${GEOSERVER_API_BASE_URL}/workspaces`;
 const GEOSERVER_LOCAL_RELOAD_URL = `${GEOSERVER_LOCAL_BASE_URL}/rest/reload`;
 const DATA_STORE_API_URL = `${GEOSERVER_API_BASE_URL}/dataStores/${WORKSPACE_NAME}`;
@@ -75,14 +78,16 @@ if (await isDataDirExists()) {
   });
 
   logger.info({ msg: `starts watching ${DATASTORE_PATH} path` });
-  watcher.on('add', path => {
+  watcher.on('add', async path => {
     logger.info({ msg: `File added: ${path}` });
-    reloadGeoServer();
+    await reloadGeoServer();
   })
-    .on('unlink', path => {
+    .on('unlink', async path => {
       logger.info({ msg: `File removed: ${path}` });
-      reloadGeoServer();
+      await reloadGeoServer();
     })
+    .on('ready', () => log('Initial scan complete. Ready for changes'))
+    .on('error', error => logger.error({ msg: `Watcher error: ${error}` }));
 } else {
   logger.error({ msg: `Data directory ${DATASTORE_PATH} does not exist or is not accessible` });
   throw new Error(`Data directory ${DATASTORE_PATH} does not exist or is not accessible`);
@@ -95,7 +100,7 @@ async function reloadGeoServer() {
     await zx.fetch(`${GEOSERVER_LOCAL_RELOAD_URL}`, {
       method: 'POST',
       headers: {
-        'Authorization': 'Basic ' + Buffer.from('admin:geoserver').toString('base64'),
+        'Authorization': 'Basic ' + Buffer.from(`${GEOSERVER_USER}:${GEOSERVER_PASS}`).toString('base64'),
       },
     });
   } catch (error) {
