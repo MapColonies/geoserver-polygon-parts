@@ -26,6 +26,7 @@ stateDiagram-v2
 | :---:   | :---: | :---: | :---: |
 | GEOSERVER_USER | geoserver admin user name | - | admin |
 | GEOSERVER_PASS | geoserver admin password name | - | geoserver |
+| POLLING_INTERVAL | watch dir check changes inteval in MS | - | 300 |
 | DATA_STORE_HOST | postgres server endpoint | + | - |
 | DATA_STORE_PORT | postgres server port | - | 5432 |
 | DATA_STORE_DATABASE | db name | - | polygon_parts |
