@@ -16,7 +16,7 @@ const logger = jsLogger.default({
 });
 
 const GEOSERVER_LOCAL_PORT = '8080'; // Default port for local GeoServer instance, hard coded in deployment.yaml containerPort
-const POLLING_INTERVAL = env.get('POLLING_INTERVAL').default(300).asIntPositive(); // Polling interval in milliseconds
+const POLLING_INTERVAL_MS = env.get('POLLING_INTERVAL_MS').default(300).asIntPositive(); // Polling interval in milliseconds
 const GEOSERVER_BASE_URL = env.get('GEOSERVER_BASE_URL').default('http://localhost:8080/geoserver').asString();
 const GEOSERVER_LOCAL_BASE_URL = `http://localhost:${GEOSERVER_LOCAL_PORT}/geoserver`;
 
@@ -32,7 +32,7 @@ const FEATURE_TYPES_STRINGS_BLACK_LIST = env.get('FEATURE_TYPES_STRINGS_BLACK_LI
 const FEATURE_TYPES_REGEX_BLACK_LIST = env.get('FEATURE_TYPES_REGEX_BLACK_LIST').default(['migrations', 'parts', 'polygon_parts', 'test_view']).asJson();
 
 const GEOSERVER_USER = env.get('GEOSERVER_ADMIN_USER').default('admin').asString();
-const GEOSERVER_PASS = env.get('GEOSERVER_ADMIN_PASSWORD').default('admin').asString();
+const GEOSERVER_PASS = env.get('GEOSERVER_ADMIN_PASSWORD').default('geoserver').asString();
 const WORKSPACE_API_URL = `${GEOSERVER_API_BASE_URL}/workspaces`;
 const GEOSERVER_LOCAL_RELOAD_URL = `${GEOSERVER_LOCAL_BASE_URL}/rest/reload`;
 const DATA_STORE_API_URL = `${GEOSERVER_API_BASE_URL}/dataStores/${WORKSPACE_NAME}`;
@@ -73,8 +73,8 @@ if (await isDataDirExists()) {
     persistent: true,
     ignoreInitial: true,
     usePolling: true,       // use polling to detect changes - optimized for NFS
-    interval: POLLING_INTERVAL,         // how often to poll (in ms)
-    binaryInterval: POLLING_INTERVAL,
+    interval: POLLING_INTERVAL_MS,         // how often to poll (in ms)
+    binaryInterval: POLLING_INTERVAL_MS,
   });
 
   logger.info({ msg: `starts watching ${DATASTORE_PATH} path` });
