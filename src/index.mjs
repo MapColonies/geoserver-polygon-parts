@@ -86,7 +86,7 @@ if (await isDataDirExists()) {
       logger.info({ msg: `File removed: ${path}` });
       await reloadGeoServer();
     })
-    .on('ready', () => log('Initial scan complete. Ready for changes'))
+    .on('ready', () => logger.info('Initial scan complete. Ready for changes'))
     .on('error', error => logger.error({ msg: `Watcher error: ${error}` }));
 } else {
   logger.error({ msg: `Data directory ${DATASTORE_PATH} does not exist or is not accessible` });
