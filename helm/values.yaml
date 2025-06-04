@@ -142,7 +142,7 @@ sideCar:
   env:
     logLevel: "info"
     logPretty: "false"
-    pollingIntervalMs: 300
+    pollingIntervalMs: 3000
     # ssl:
     #   CA_DIR: /opt/certs/ca/
     #   KEY_DIR: /opt/certs/key/
