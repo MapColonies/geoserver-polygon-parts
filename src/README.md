@@ -3,6 +3,7 @@
 * This Side-car's goal is to run over new geoserver and auto-generate layer that will serve entire suite of polygon parts features via WFS.
 * It Watches geoserver REST-API endpoint availability and once detect so, process will be start.
 * Implemented with Nodejs and use fetch requests on several geoserver's rest APIs [/rest](https://docs.geoserver.org/main/en/user/rest/index.html).
+* Service also listen to changes on the main data dir and sends a reload request to geoserver on any changes.
 * Supports Javascript.
 
 ## Main processes
@@ -25,6 +26,7 @@ stateDiagram-v2
 | :---:   | :---: | :---: | :---: |
 | GEOSERVER_USER | geoserver admin user name | - | admin |
 | GEOSERVER_PASS | geoserver admin password name | - | geoserver |
+| POLLING_INTERVAL_MS | watch dir check changes inteval in MS | - | 3000 |
 | DATA_STORE_HOST | postgres server endpoint | + | - |
 | DATA_STORE_PORT | postgres server port | - | 5432 |
 | DATA_STORE_DATABASE | db name | - | polygon_parts |

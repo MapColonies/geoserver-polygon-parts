@@ -1,3 +1,5 @@
+import * as chokidar from 'chokidar';
+import { stat } from 'fs/promises';
 import * as zx from 'zx';
 import { strictEqual as assertEqual, ok as assertOk } from 'assert';
 import env from 'env-var';
@@ -13,18 +15,26 @@ const logger = jsLogger.default({
   prettyPrint: env.get('LOG_PRETTY').default('false').asBool(),
 });
 
+const GEOSERVER_LOCAL_PORT = '8080'; // Default port for local GeoServer instance, hard coded in deployment.yaml containerPort
+const POLLING_INTERVAL_MS = env.get('POLLING_INTERVAL_MS').default(3000).asIntPositive(); // Polling interval in milliseconds
 const GEOSERVER_BASE_URL = env.get('GEOSERVER_BASE_URL').default('http://localhost:8080/geoserver').asString();
+const GEOSERVER_LOCAL_BASE_URL = `http://localhost:${GEOSERVER_LOCAL_PORT}/geoserver`;
 
 const GEOSERVER_API_BASE_URL = env.get('GEOSERVER_API_BASE_URL').default('http://localhost:8081').asString();
 const CATALOG_MANAGER_SERVICE_URL = env.get('CATALOG_MANAGER_SERVICE_URL').default('http://localhost:8082').asString();
 
 const WORKSPACE_NAME = env.get('WORKSPACE_NAME').default('polygonParts').asString();
 const DATASTORE_NAME = env.get('DATASTORE_NAME').default('polygonParts').asString();
+const GEOSERVER_DATA_DIR = env.get('GEOSERVER_DATA_DIR').default('/data_dir').asString();
+const DATASTORE_PATH = `${GEOSERVER_DATA_DIR}/workspaces/${WORKSPACE_NAME}/${DATASTORE_NAME}`;
 
 const FEATURE_TYPES_STRINGS_BLACK_LIST = env.get('FEATURE_TYPES_STRINGS_BLACK_LIST').default(['*_parts']).asJson();
-const FEATURE_TYPES_REGEX_BLACK_LIST = env.get('FEATURE_TYPES_REGEX_BLACK_LIST').default(['migrations','parts','polygon_parts','test_view']).asJson();
+const FEATURE_TYPES_REGEX_BLACK_LIST = env.get('FEATURE_TYPES_REGEX_BLACK_LIST').default(['migrations', 'parts', 'polygon_parts', 'test_view']).asJson();
 
+const GEOSERVER_USER = env.get('GEOSERVER_ADMIN_USER').default('admin').asString();
+const GEOSERVER_PASS = env.get('GEOSERVER_ADMIN_PASSWORD').default('geoserver').asString();
 const WORKSPACE_API_URL = `${GEOSERVER_API_BASE_URL}/workspaces`;
+const GEOSERVER_LOCAL_RELOAD_URL = `${GEOSERVER_LOCAL_BASE_URL}/rest/reload`;
 const DATA_STORE_API_URL = `${GEOSERVER_API_BASE_URL}/dataStores/${WORKSPACE_NAME}`;
 const FEATURE_TYPES_API_URL = `${GEOSERVER_API_BASE_URL}/featureTypes/${WORKSPACE_NAME}/${DATASTORE_NAME}`;
 const CATALOG_MANAGER_FIND_URL = `${CATALOG_MANAGER_SERVICE_URL}/records/find`;
@@ -56,10 +66,67 @@ if (!dataStoreExists) {
 await checkFeatureTypes();
 
 logger.info({ msg: `Env ready: Completed Geoserver initialization` });
-printAvocado();
-setInterval(() => { printAvocado() }, 10000000);
 
+//listen to nfs changes
+if (await isDataDirExists()) {
+  const watcher = chokidar.watch(DATASTORE_PATH, {
+    persistent: true,
+    ignoreInitial: true,
+    usePolling: true,       // use polling to detect changes - optimized for NFS
+    interval: POLLING_INTERVAL_MS,         // how often to poll (in ms)
+    binaryInterval: POLLING_INTERVAL_MS,
+  });
+
+  logger.info({ msg: `starts watching ${DATASTORE_PATH} path` });
+  watcher.on('add', async path => {
+    logger.info({ msg: `File added: ${path}` });
+    await reloadGeoServer();
+  })
+    .on('unlink', async path => {
+      logger.info({ msg: `File removed: ${path}` });
+      await reloadGeoServer();
+    })
+    .on('ready', () => logger.info('Initial scan complete. Ready for changes'))
+    .on('error', error => logger.error({ msg: `Watcher error: ${error}` }));
+} else {
+  logger.error({ msg: `Data directory ${DATASTORE_PATH} does not exist or is not accessible` });
+  throw new Error(`Data directory ${DATASTORE_PATH} does not exist or is not accessible`);
+}
 // *******************************************************************
+
+async function reloadGeoServer() {
+  try {
+    logger.info({ msg: `Triggering geoserver reload on ${GEOSERVER_LOCAL_RELOAD_URL}...` });
+    await zx.fetch(`${GEOSERVER_LOCAL_RELOAD_URL}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(`${GEOSERVER_USER}:${GEOSERVER_PASS}`).toString('base64'),
+      },
+    });
+  } catch (error) {
+    logger.warn({
+      msg: `Failed connect to reload geoserver with error ${error}, will retry again`,
+    });
+    await zx.sleep(15000);
+  }
+}
+
+async function isDataDirExists() {
+  try {
+    const stats = await stat(DATASTORE_PATH);
+    const isDirectory = stats.isDirectory()
+    if (isDirectory) {
+      logger.info({ msg: `successfully checked ${DATASTORE_PATH} is a directory` });
+      return true;
+    } else {
+      logger.error({ msg: `${DATASTORE_PATH} is not a directory` });
+      return false;
+    }
+  } catch (err) {
+    logger.error({ msg: `Error checking data directory ${DATASTORE_PATH}: ${err.message}` });
+    throw err;
+  }
+}
 
 /**
  * This function will check periodically till detect that geoserver is up and than exit the method
@@ -176,7 +243,7 @@ async function createDataStore() {
 async function checkFeatureTypes() {
 
   const availableNames = await getAvailableFeatureTypes();
-  const mappedLayerNames= await mapNativeNameToLayerName(availableNames);
+  const mappedLayerNames = await mapNativeNameToLayerName(availableNames);
 
   if (mappedLayerNames.length === 0) {
     logger.info(' There are no layers to publish! ');
@@ -237,12 +304,11 @@ async function getAvailableFeatureTypes() {
     method: 'GET',
   });
   const availableLayers = await getAvailableFeatureTypes.json();
-  const availableNames = availableLayers.filter((layer) => 
-    {
-      const isInBlacklist = FEATURE_TYPES_STRINGS_BLACK_LIST.includes(layer.name);
-      const matchesRegexBlacklist = FEATURE_TYPES_REGEX_BLACK_LIST.some((regex) => (new RegExp(regex)).test(layer.name));
-      return !isInBlacklist && !matchesRegexBlacklist;
-    }).map((layer) => layer.name);
+  const availableNames = availableLayers.filter((layer) => {
+    const isInBlacklist = FEATURE_TYPES_STRINGS_BLACK_LIST.includes(layer.name);
+    const matchesRegexBlacklist = FEATURE_TYPES_REGEX_BLACK_LIST.some((regex) => (new RegExp(regex)).test(layer.name));
+    return !isInBlacklist && !matchesRegexBlacklist;
+  }).map((layer) => layer.name);
   logger.info({ msg: `availableNames: ${availableNames}` });
   await zx.sleep(1000);
   return availableNames;
@@ -263,7 +329,7 @@ async function getConfiguredFeatureTypes() {
 }
 
 async function mapNativeNameToLayerName(availableNames) {
-  const configuredLayers= await getConfiguredFeatureTypes();
+  const configuredLayers = await getConfiguredFeatureTypes();
   const layersMapping = await Promise.all(availableNames.map(async (nativeName) => {
     const { productId, productType } = splitProductIdAndType(nativeName);
     try {
@@ -282,12 +348,12 @@ async function mapNativeNameToLayerName(availableNames) {
       const fetchedProductType = layerDetails[0].metadata.productType;
 
       const layerName = `${fetchedProductId}-${fetchedProductType}`;
-      
+
       /* getAvailable returns the tableNames. 
       Due to the fact that we are publishing the features in a different name from 
       the tableName, the available returns  some already published layers
       so we want to get the configuredLayers and check that the layer name is not in it*/
-      if(!configuredLayers.includes(layerName)){
+      if (!configuredLayers.includes(layerName)) {
         return { nativeName, layerName };
       }
       return undefined;
@@ -307,7 +373,7 @@ function splitProductIdAndType(name) {
 
   const productId = name.slice(0, lastUnderscoreIndex);
   const productType = findProductType(name.slice(lastUnderscoreIndex + 1));
-  
+
   return { productId, productType };
 }
 
@@ -317,69 +383,8 @@ function findProductType(input) {
 
   // Loop through the enum values
   return Object.values(ProductType).find(value => {
-      // Normalize the enum value by converting it to lowercase and removing underscores
-      const normalizedEnumValue = value.toLowerCase().replace(/_/g, '');
-      return normalizedEnumValue === formattedInput;
+    // Normalize the enum value by converting it to lowercase and removing underscores
+    const normalizedEnumValue = value.toLowerCase().replace(/_/g, '');
+    return normalizedEnumValue === formattedInput;
   });
-}
-
-
-function printAvocado() {
-  console.log(`
-                                                                                                    
-                                                                                                    
-                                                                                                    
-  ........  .............................                                    
-  ........  .............::::............                                    
-  ........  ..........+***++***++*+**=.......                                   
-.......... ........*+++*+=--------+****+=....     .                             
-.................***+=----------------+***+.........                            
-.......... ....-**+=--------------------++*+:.......                            
-..............+**+------:::::::::.:-------***:......                            
-.............+**=-----::::.::.::::::.:-----+*+-.....                            
-............=*++-----.:::::::::::::::::-----+**:....                            
-..........-**+-----.:::::::::::::::::::-----++*...                             
-..........***-----::::::::::::::::::::::-----**+..                             
-.........***-=---.:::::::::::::::::::::::----=**=. .                           
-........=**+----::::::::::::::::::::::::::----+*+........                      
-........**+----::.:::::::::::::::::::::.::-----***.......                      
-.......++*-----::::::::::::::::::::::::::::----=+*=.......                     
-......=+*=----::.:--::::::::::::::::.:--::::----++*:......                     
-.....=**+----:::+%%=.%:.:::::::::.::@%@..#.:-----*+*.....                      
-....-+++-----:..%%-*@%+.:::::::::.:=%%.@@%::.-----*+*....                      
-...-+*+-----:::::@@@%#::.::::::::::.*%%@@-::::-----+*+...                      
-..-*++-----:::.:::::.:::::::.::::::..:::::::..:-----++*......                  
-..***-----.::::::::::.::-%...::.%+::::::::::::::-----***.....                  
-.***-----..:::::::::::::::+@%%@*:::::::::::::::::----=***.... ..               
-.+**=----::::::::::::::::::::.:..::::::::::::::::::----++*-... ...              
--**+----::::::::::::.:..:...::.::.:::::.:::::::::::-----+**.......              
-.+**-----.:::::::::::::.::**#**#***+:::.::::::::::::.----=**=......              
-:*++----:.::::::::::.::#******+++++***#::::.::::::::.:=---+**......              
-=+*=----:::::::::::.:*********++++++++***::.::::::::.:----+**:.....              
-***----:::::::::::.=************++++++++**-:.:::::::::-----**=.....              
-***----:::::::::::+***************+++++++**-.::::::::.-----**=.. ..              
-*+*----::::::.::::#******************++++*#*::::::::::-----**=.. ..              
-+**-----:::::::::+#***********************#*-:::::::.:----=**=.. ..              
-+*+-----:.:::::.:+##************************=:::::::.:----+**:....               
--**+----:::::::.-=###***********************-::::::::-----**+......              
-:+**-----::::::.::###*********************#*.::::::::----=**=......              
-:-**+-----:::::.:--####******************#*::::::.::-----***.......              
-.::+**+-----.::::::--######*************#*#:::::::.:-----+++:...                  
-..::+*+=-----:::::.-::########**********#*..:.:::::-----+*+:. ..                  
-..:::+*++------::::::--:*##############+:::::::::------+**-.                      
-...:::=+**=------::::::-:::=*#####**=::::.:::::------=+**:...                     
-.:...:::***+-------:.:::::::::::::::::.::::.:-------*+++.....                     
-.....::::=***+--------:::::::::::::::::::---------+*+*:.....                      
-.......::::+*+*+------------::::::::-----------=*++*:.......                      
-.........::::=***++=------------------------=+*+**:..........                     
-............:::::=**+**+=----------------=+**++*-......                            
-..............::::::-++*+**+******++++++**+++:........                             
-.......... ...:::::::::=+***++*****+=:::...........                             
-...............::::::::::::::::::...............                             
-        ...............                                              
-        .............                                                
-                                                                     
-                                                                     
-`);
-
 }

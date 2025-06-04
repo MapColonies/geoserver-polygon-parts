@@ -32,7 +32,8 @@
     "@map-colonies/mc-model-types": "^17.9.3",
     "dotenv": "^16.4.5",
     "env-var": "^7.5.0",
-    "zx": "^8.1.2"
+    "zx": "^8.1.2",
+    "chokidar": "^4.0.3"
   },
   "devDependencies": {
     "@map-colonies/eslint-config": "^4.0.0",
