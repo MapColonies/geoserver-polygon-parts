@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.1.3](https://github.com/MapColonies/geoserver-polygon-parts/compare/v2.1.2...v2.1.3) (2025-06-24)
+
+
+### Features
+
+* reload geoserver on NFS change (MAPCO-7825) ([#15](https://github.com/MapColonies/geoserver-polygon-parts/issues/15)) ([b723d65](https://github.com/MapColonies/geoserver-polygon-parts/commit/b723d65a8a3eeb7035d8d7f07d123e406f9b8266))
+
+
+### Bug Fixes
+
+* remove proxy hide headers cors ([#16](https://github.com/MapColonies/geoserver-polygon-parts/issues/16)) ([a7ca382](https://github.com/MapColonies/geoserver-polygon-parts/commit/a7ca382ad6a27f8a5f26401eabd566e3957db112))
+
 ### [2.1.2](https://github.com/MapColonies/geoserver-polygon-parts/compare/v2.1.1...v2.1.2) (2024-12-15)
 
 
