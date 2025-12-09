@@ -8,6 +8,13 @@ global:
   geoserver: {}
   serviceUrls: {}
 
+mclabels:
+  #environment: development
+  component: backend
+  partOf: serving
+  owner: raster
+  gisDomain: raster
+
 cloudProvider:
   dockerRegistryUrl: my-registry-url.io
   imagePullSecretName: 'my-registry-secret'

@@ -30,14 +30,16 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "geoserver.labels" -}}
+app.kubernetes.io/name: {{ include "geoserver.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 helm.sh/chart: {{ include "geoserver.chart" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/component: backend
 environment: {{ include "geoserver.environment" . }}
-{{ include "geoserver.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
+{{ include "mclabels.labels" . }}
 {{- end }}
 
 {{/*
@@ -46,6 +48,7 @@ Selector labels
 {{- define "geoserver.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "geoserver.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+{{ include "mclabels.selectorLabels" . }}
 {{- end }}
 
 {{/*
