@@ -14,6 +14,10 @@ mclabels:
   partOf: serving
   owner: raster
   gisDomain: raster
+  prometheus:
+    enabled: true
+    port: 9117
+  longScraping: true
 
 cloudProvider:
   dockerRegistryUrl: my-registry-url.io
