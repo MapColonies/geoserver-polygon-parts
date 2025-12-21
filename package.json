@@ -1,6 +1,6 @@
 {
   "name": "pp-geoserver-side-car",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "this utility create initial geoserver connection & set polygonParts mappings",
   "main": "./src/index.mjs",
   "scripts": {
