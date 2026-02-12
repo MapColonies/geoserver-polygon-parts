@@ -164,11 +164,14 @@ sideCar:
 
     featureTypesBlackLists:
       tableNamesRegex:
-      - '.*_parts'
+        - '.*_history$'
+        - '.*_valid$'
       tableNameStrings:
-      - migrations
-      - parts
-      - polygon_parts
+        - migrations
+        - history
+        - polygon_parts
+        - base_parts
+        - validation_parts
 
 nginx:
   enabled: true

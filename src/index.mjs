@@ -28,8 +28,8 @@ const DATASTORE_NAME = env.get('DATASTORE_NAME').default('polygonParts').asStrin
 const GEOSERVER_DATA_DIR = env.get('GEOSERVER_DATA_DIR').default('/data_dir').asString();
 const DATASTORE_PATH = `${GEOSERVER_DATA_DIR}/workspaces/${WORKSPACE_NAME}/${DATASTORE_NAME}`;
 
-const FEATURE_TYPES_STRINGS_BLACK_LIST = env.get('FEATURE_TYPES_STRINGS_BLACK_LIST').default(['*_parts']).asJson();
-const FEATURE_TYPES_REGEX_BLACK_LIST = env.get('FEATURE_TYPES_REGEX_BLACK_LIST').default(['migrations', 'parts', 'polygon_parts', 'test_view']).asJson();
+const FEATURE_TYPES_STRINGS_BLACK_LIST = env.get('FEATURE_TYPES_STRINGS_BLACK_LIST').default(['*history$']).asJson();
+const FEATURE_TYPES_REGEX_BLACK_LIST = env.get('FEATURE_TYPES_REGEX_BLACK_LIST').default(['migrations','history' ,'polygon_parts', 'test_view']).asJson();
 
 const GEOSERVER_USER = env.get('GEOSERVER_ADMIN_USER').default('admin').asString();
 const GEOSERVER_PASS = env.get('GEOSERVER_ADMIN_PASSWORD').default('geoserver').asString();
