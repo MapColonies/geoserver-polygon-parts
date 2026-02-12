@@ -1,4 +1,4 @@
-FROM node:24.0.0-alpine3.21
+FROM node:24.0.0-slim
 
 RUN apt-get -y update && apt-get -y install rsync && apt-get -y install curl
 
