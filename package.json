@@ -40,7 +40,7 @@
     "@map-colonies/prettier-config": "0.0.1",
     "@map-colonies/standard-version-update-helm-version": "^2.0.1",
     "eslint": "^8.43.0",
-    "prettier": "^2.8.8",
+    "prettier": "^3.8.1",
     "standard-version": "^9.5.0"
   },
   "engines": {
