@@ -103,7 +103,7 @@ async function reloadGeoServer() {
     await zx.fetch(`${GEOSERVER_LOCAL_RELOAD_URL}`, {
       method: 'POST',
       headers: {
-        'Authorization': 'Basic ' + Buffer.from(`${GEOSERVER_USER}:${GEOSERVER_PASS}`).toString('base64'),
+        Authorization: 'Basic ' + Buffer.from(`${GEOSERVER_USER}:${GEOSERVER_PASS}`).toString('base64'),
       },
     });
   } catch (error) {
