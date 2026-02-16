@@ -28,8 +28,11 @@ const DATASTORE_NAME = env.get('DATASTORE_NAME').default('polygonParts').asStrin
 const GEOSERVER_DATA_DIR = env.get('GEOSERVER_DATA_DIR').default('/data_dir').asString();
 const DATASTORE_PATH = `${GEOSERVER_DATA_DIR}/workspaces/${WORKSPACE_NAME}/${DATASTORE_NAME}`;
 
-const FEATURE_TYPES_STRINGS_BLACK_LIST = env.get('FEATURE_TYPES_STRINGS_BLACK_LIST').default(['*_parts']).asJson();
-const FEATURE_TYPES_REGEX_BLACK_LIST = env.get('FEATURE_TYPES_REGEX_BLACK_LIST').default(['migrations', 'parts', 'polygon_parts', 'test_view']).asJson();
+const FEATURE_TYPES_STRINGS_BLACK_LIST = env.get('FEATURE_TYPES_STRINGS_BLACK_LIST').default(['*history$']).asJson();
+const FEATURE_TYPES_REGEX_BLACK_LIST = env
+  .get('FEATURE_TYPES_REGEX_BLACK_LIST')
+  .default(['migrations', 'history', 'polygon_parts', 'test_view'])
+  .asJson();
 
 const GEOSERVER_USER = env.get('GEOSERVER_ADMIN_USER').default('admin').asString();
 const GEOSERVER_PASS = env.get('GEOSERVER_ADMIN_PASSWORD').default('geoserver').asString();
@@ -40,7 +43,6 @@ const FEATURE_TYPES_API_URL = `${GEOSERVER_API_BASE_URL}/featureTypes/${WORKSPAC
 const CATALOG_MANAGER_FIND_URL = `${CATALOG_MANAGER_SERVICE_URL}/records/find`;
 
 const GLOBAL_WFS_SETTING_API_URL = `${GEOSERVER_API_BASE_URL}/services/wfs/settings`;
-
 
 // *******************GEOSERVER INITIALIZATION************************************************
 
@@ -72,22 +74,23 @@ if (await isDataDirExists()) {
   const watcher = chokidar.watch(DATASTORE_PATH, {
     persistent: true,
     ignoreInitial: true,
-    usePolling: true,       // use polling to detect changes - optimized for NFS
-    interval: POLLING_INTERVAL_MS,         // how often to poll (in ms)
+    usePolling: true, // use polling to detect changes - optimized for NFS
+    interval: POLLING_INTERVAL_MS, // how often to poll (in ms)
     binaryInterval: POLLING_INTERVAL_MS,
   });
 
   logger.info({ msg: `starts watching ${DATASTORE_PATH} path` });
-  watcher.on('add', async path => {
-    logger.info({ msg: `File added: ${path}` });
-    await reloadGeoServer();
-  })
-    .on('unlink', async path => {
+  watcher
+    .on('add', async (path) => {
+      logger.info({ msg: `File added: ${path}` });
+      await reloadGeoServer();
+    })
+    .on('unlink', async (path) => {
       logger.info({ msg: `File removed: ${path}` });
       await reloadGeoServer();
     })
     .on('ready', () => logger.info('Initial scan complete. Ready for changes'))
-    .on('error', error => logger.error({ msg: `Watcher error: ${error}` }));
+    .on('error', (error) => logger.error({ msg: `Watcher error: ${error}` }));
 } else {
   logger.error({ msg: `Data directory ${DATASTORE_PATH} does not exist or is not accessible` });
   throw new Error(`Data directory ${DATASTORE_PATH} does not exist or is not accessible`);
@@ -100,7 +103,7 @@ async function reloadGeoServer() {
     await zx.fetch(`${GEOSERVER_LOCAL_RELOAD_URL}`, {
       method: 'POST',
       headers: {
-        'Authorization': 'Basic ' + Buffer.from(`${GEOSERVER_USER}:${GEOSERVER_PASS}`).toString('base64'),
+        Authorization: 'Basic ' + Buffer.from(`${GEOSERVER_USER}:${GEOSERVER_PASS}`).toString('base64'),
       },
     });
   } catch (error) {
@@ -114,7 +117,7 @@ async function reloadGeoServer() {
 async function isDataDirExists() {
   try {
     const stats = await stat(DATASTORE_PATH);
-    const isDirectory = stats.isDirectory()
+    const isDirectory = stats.isDirectory();
     if (isDirectory) {
       logger.info({ msg: `successfully checked ${DATASTORE_PATH} is a directory` });
       return true;
@@ -241,7 +244,6 @@ async function createDataStore() {
  * compare get list configured and get available - if create feature types of all that are available and not configured
  */
 async function checkFeatureTypes() {
-
   const availableNames = await getAvailableFeatureTypes();
   const mappedLayerNames = await mapNativeNameToLayerName(availableNames);
 
@@ -258,7 +260,9 @@ async function checkFeatureTypes() {
           body: JSON.stringify({ nativeName: entity.nativeName, name: entity.layerName }),
         });
         if (!response.ok) {
-          throw new Error(`Failed to POST for table:${entity.nativeName} with layerName: ${entity.layerName}: ${response.status} ${response.statusText}`);
+          throw new Error(
+            `Failed to POST for table:${entity.nativeName} with layerName: ${entity.layerName}: ${response.status} ${response.statusText}`
+          );
         }
         logger.info(`Successfully posted for table:${entity.nativeName} with layerName: ${entity.layerName}`);
       } catch (error) {
@@ -304,11 +308,13 @@ async function getAvailableFeatureTypes() {
     method: 'GET',
   });
   const availableLayers = await getAvailableFeatureTypes.json();
-  const availableNames = availableLayers.filter((layer) => {
-    const isInBlacklist = FEATURE_TYPES_STRINGS_BLACK_LIST.includes(layer.name);
-    const matchesRegexBlacklist = FEATURE_TYPES_REGEX_BLACK_LIST.some((regex) => (new RegExp(regex)).test(layer.name));
-    return !isInBlacklist && !matchesRegexBlacklist;
-  }).map((layer) => layer.name);
+  const availableNames = availableLayers
+    .filter((layer) => {
+      const isInBlacklist = FEATURE_TYPES_STRINGS_BLACK_LIST.includes(layer.name);
+      const matchesRegexBlacklist = FEATURE_TYPES_REGEX_BLACK_LIST.some((regex) => new RegExp(regex).test(layer.name));
+      return !isInBlacklist && !matchesRegexBlacklist;
+    })
+    .map((layer) => layer.name);
   logger.info({ msg: `availableNames: ${availableNames}` });
   await zx.sleep(1000);
   return availableNames;
@@ -330,43 +336,43 @@ async function getConfiguredFeatureTypes() {
 
 async function mapNativeNameToLayerName(availableNames) {
   const configuredLayers = await getConfiguredFeatureTypes();
-  const layersMapping = await Promise.all(availableNames.map(async (nativeName) => {
-    const { productId, productType } = splitProductIdAndType(nativeName);
-    try {
-      const response = await zx.fetch(CATALOG_MANAGER_FIND_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ metadata: { productId, productType } }),
-      });
-      const layerDetails = await response.json();
-      if (layerDetails.length !== 1) {
-        throw new Error(`Expected exactly one result for ${nativeName}, but got ${layerDetails.length}`);
-      }
-      const fetchedProductId = layerDetails[0].metadata.productId;
-      const fetchedProductType = layerDetails[0].metadata.productType;
+  const layersMapping = await Promise.all(
+    availableNames.map(async (nativeName) => {
+      const { productId, productType } = splitProductIdAndType(nativeName);
+      try {
+        const response = await zx.fetch(CATALOG_MANAGER_FIND_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ metadata: { productId, productType } }),
+        });
+        const layerDetails = await response.json();
+        if (layerDetails.length !== 1) {
+          throw new Error(`Expected exactly one result for ${nativeName}, but got ${layerDetails.length}`);
+        }
+        const fetchedProductId = layerDetails[0].metadata.productId;
+        const fetchedProductType = layerDetails[0].metadata.productType;
 
-      const layerName = `${fetchedProductId}-${fetchedProductType}`;
+        const layerName = `${fetchedProductId}-${fetchedProductType}`;
 
-      /* getAvailable returns the tableNames. 
+        /* getAvailable returns the tableNames. 
       Due to the fact that we are publishing the features in a different name from 
       the tableName, the available returns  some already published layers
       so we want to get the configuredLayers and check that the layer name is not in it*/
-      if (!configuredLayers.includes(layerName)) {
-        return { nativeName, layerName };
+        if (!configuredLayers.includes(layerName)) {
+          return { nativeName, layerName };
+        }
+        return undefined;
+      } catch (error) {
+        logger.error(`Error processing ${nativeName}: ${error.message}`);
+        return undefined;
       }
-      return undefined;
-
-    } catch (error) {
-      logger.error(`Error processing ${nativeName}: ${error.message}`);
-      return undefined;
-    }
-  }));
+    })
+  );
   //filter out undefined values returned from the mapping
   return layersMapping.filter((result) => result);
 }
-
 
 function splitProductIdAndType(name) {
   const lastUnderscoreIndex = name.lastIndexOf('_');
@@ -382,7 +388,7 @@ function findProductType(input) {
   const formattedInput = input.toLowerCase();
 
   // Loop through the enum values
-  return Object.values(ProductType).find(value => {
+  return Object.values(ProductType).find((value) => {
     // Normalize the enum value by converting it to lowercase and removing underscores
     const normalizedEnumValue = value.toLowerCase().replace(/_/g, '');
     return normalizedEnumValue === formattedInput;
