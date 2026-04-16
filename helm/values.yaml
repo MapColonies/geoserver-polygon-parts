@@ -179,7 +179,14 @@ nginx:
   fullnameOverride: ""
   image:
     repository: common/nginx
-    tag: 'v2.1.1'
+    tag: 'v2.1.5'
+  extensions:
+    server:
+      enabled: true
+      fileName: geoserver-server.conf
+    location:
+      enabled: true
+      fileName: geoserver-location.conf
   port: 8080
   internalServicePort: 80
   targetPort: 8080
@@ -195,7 +202,32 @@ nginx:
 
   backend:
     host: pp-geoserver-service
-    port: 80  
+    port: 80
+    
+  prometheusExporter:
+    # -- Enable or disable the Prometheus exporter sidecar
+    enabled: true
+    image:
+      # -- Docker image name for the Prometheus exporter
+      repository: common/nginx/nginx-prometheus-exporter
+      # -- Docker image tag for the Prometheus exporter
+      tag: latest
+      # -- Image pull policy for the Prometheus exporter
+      pullPolicy: IfNotPresent
+    resources:
+      # -- Enable or disable resource limits and requests
+      enabled: true
+      value:
+        limits:
+          # -- CPU limit for the main container
+          cpu: 100m
+          # -- Memory limit for the main container
+          memory: 128Mi
+        requests:
+          # -- CPU request for the main container
+          cpu: 100m
+          # -- Memory request for the main container
+          memory: 128Mi    
 
   authorization:
     enabled: true
@@ -209,8 +241,11 @@ nginx:
 
   extraVolumeMounts:
   - name: nginx-config
-    mountPath: "/etc/nginx/conf.d/geoserver.conf"
-    subPath: geoserver.conf
+    mountPath: "/etc/nginx/conf.d/extensions/geoserver-location.conf"
+    subPath: geoserver-location.conf
+  - name: nginx-config
+    mountPath: "/etc/nginx/conf.d/extensions/geoserver-server.conf"
+    subPath: geoserver-server.conf
 
   resources:
     enabled: true

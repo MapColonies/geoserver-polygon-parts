@@ -5,5 +5,6 @@ kind: ConfigMap
 metadata:
   name: {{ $nginxConfigmapName }}
 data:
-  geoserver.conf: {{ tpl (.Files.Get "config/geoserver.conf") . | quote }}
+  geoserver-location.conf: {{ tpl (.Files.Get "config/geoserver-location.conf") . | quote }}
+  geoserver-server.conf: {{ tpl (.Files.Get "config/geoserver-server.conf") . | quote }}
 {{- end }}

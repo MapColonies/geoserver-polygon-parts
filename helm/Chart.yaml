@@ -6,7 +6,7 @@ appVersion: 3.0.0
 description: Chart for geoserver in openshift
 dependencies:
   - name: nginx
-    version: 2.1.1
+    version: 2.1.5
     repository: oci://acrarolibotnonprod.azurecr.io/helm/common
     condition: enabled
   - name: mclabels
