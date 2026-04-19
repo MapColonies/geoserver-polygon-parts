@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@map-colonies/js-logger": "^1.0.1",
-    "@map-colonies/mc-model-types": "^17.9.3",
+    "@map-colonies/mc-model-types": "^19.0.0",
     "dotenv": "^16.4.5",
     "env-var": "^7.5.0",
     "zx": "^8.1.2",
