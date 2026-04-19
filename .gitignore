@@ -131,3 +131,6 @@ dist
 local.values.yaml
 
 *.lock
+
+# local values file for helm charts
+local.yaml

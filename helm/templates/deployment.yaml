@@ -1,7 +1,6 @@
 {{- $fs := (include "common.fs.merged" .) | fromYaml }}
 {{- $cloudProviderImagePullSecretName := include "geoserver.cloudProviderImagePullSecretName" . -}}
 {{- $deploymentName := include "deployment.fullname" . }}
-{{- $metrics := (include "common.metrics.merged" .) | fromYaml }}
 
 apiVersion: apps/v1
 kind: Deployment
