@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.2.0](https://github.com/MapColonies/geoserver-polygon-parts/compare/v3.1.0...v3.2.0) (2026-04-27)
+
+
+### Features
+
+* **helm:** update nginx version to 2.1.6 in Chart.yaml  ([#42](https://github.com/MapColonies/geoserver-polygon-parts/issues/42)) ([7d0a488](https://github.com/MapColonies/geoserver-polygon-parts/commit/7d0a488ca715491551d3e11cd2faee3374343cc7))
+
 ## [3.1.0](https://github.com/MapColonies/geoserver-polygon-parts/compare/v3.0.0...v3.1.0) (2026-04-19)
 
 
