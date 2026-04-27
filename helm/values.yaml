@@ -179,7 +179,7 @@ nginx:
   fullnameOverride: ""
   image:
     repository: common/nginx
-    tag: 'v2.1.5'
+    tag: 'v2.1.6'
   extensions:
     server:
       enabled: true
