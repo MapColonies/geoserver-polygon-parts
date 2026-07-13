@@ -176,7 +176,7 @@ sideCar:
 nginx:
   enabled: true
   replicaCount: 1
-  fullnameOverride: ""
+  nameOverride: "pycsw-nginx"
   image:
     repository: common/nginx
     tag: 'v2.2.1'
