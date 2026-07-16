@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.3.0](https://github.com/MapColonies/geoserver-polygon-parts/compare/v3.2.0...v3.3.0) (2026-07-16)
+
+
+### Miscellaneous Chores
+
+* force alignment to rc track ([bae146f](https://github.com/MapColonies/geoserver-polygon-parts/commit/bae146f330a7d9bd8cf93ec37b412f31fa8d9b5f))
+
 ## [3.2.0](https://github.com/MapColonies/geoserver-polygon-parts/compare/v3.1.0...v3.2.0) (2026-04-27)
 
 
