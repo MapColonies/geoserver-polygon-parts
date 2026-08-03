@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.3.1](https://github.com/MapColonies/geoserver-polygon-parts/compare/v3.3.0...v3.3.1) (2026-08-03)
+
+
+### Bug Fixes
+
+* **helm:** upgrade nginx chart to 2.3.1 and drop pinned image tag ([#50](https://github.com/MapColonies/geoserver-polygon-parts/issues/50)) ([21797e0](https://github.com/MapColonies/geoserver-polygon-parts/commit/21797e000fa5e8063ea0590f9058c984053f1945))
+
 ## [3.3.0](https://github.com/MapColonies/geoserver-polygon-parts/compare/v3.2.0...v3.3.0) (2026-07-16)
 
 
