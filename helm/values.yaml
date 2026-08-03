@@ -179,7 +179,6 @@ nginx:
   nameOverride: "pp-geoserver-nginx"
   image:
     repository: common/nginx
-    tag: 'v2.2.1'
   extensions:
     server:
       enabled: true
