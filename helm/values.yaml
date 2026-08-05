@@ -16,7 +16,7 @@ mclabels:
   prometheus:
     enabled: true
     port: 9117
-  longScraping: true
+  logScraping: true
 
 cloudProvider:
   dockerRegistryUrl: my-registry-url.io
@@ -37,7 +37,7 @@ imagePullPolicy: Always
 
 image:
   geoserverRepository: geoserver-os
-  geoserverTag: "latest"
+  geoserverTag: "v2.0.0-2.26.0"
   sidecarRepository: yahalom-geoserver-side-car
   sidecarTag: "latest"
 
