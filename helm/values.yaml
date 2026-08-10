@@ -183,13 +183,19 @@ nginx:
   nameOverride: "pp-geoserver-nginx"
   image:
     repository: common/nginx
-  extensions:
-    server:
-      enabled: true
-      fileName: geoserver-server.conf
-    location:
-      enabled: true
-      fileName: geoserver-location.conf
+  # The sub-chart reads these as `.Values.nginx.extensions.*` from inside itself,
+  # i.e. from its own top-level `nginx` values key -- so from here they have to be
+  # nested under `nginx.nginx`. Setting them at `nginx.extensions` leaves the
+  # sub-chart on its defaults (enabled: false), which mounts the snippets below
+  # without ever adding the `include` that loads them.
+  nginx:
+    extensions:
+      server:
+        enabled: true
+        fileName: geoserver-server.conf
+      location:
+        enabled: true
+        fileName: geoserver-location.conf
   port: 8080
   internalServicePort: 80
   targetPort: 8080
