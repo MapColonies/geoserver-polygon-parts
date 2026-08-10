@@ -22,7 +22,7 @@ Two layers can emit CORS response headers: the nginx sub-chart (which always add
 server level) and GeoServer itself (Tomcat's `CorsFilter`, enabled by default in the
 kartoza-based image). Behind nginx that yields two `Access-Control-Allow-Origin` headers.
 
-`disableCors` turns GeoServer's own handling off, leaving nginx as the single source:
+`disableCors` turns GeoServer's own handling off, so only nginx's headers remain:
 
 ```yaml
 disableCors: true
@@ -30,11 +30,24 @@ disableCors: true
 
 It renders the `DISABLE_CORS` env var into the ConfigMap, which the geoserver container
 consumes via `envFrom`. The image's entrypoint comments the `CorsFilter` out of
-`conf/web.xml` when it is `true`. Defaults to `false`, preserving current behaviour.
+`conf/web.xml` when it is `true`. It also adds `proxy_hide_header` for the CORS headers
+in `config/geoserver-location.conf`, so anything GeoServer still sends is dropped at
+nginx rather than reaching the client. Defaults to `false`, preserving current behaviour.
 
 > [!NOTE]
-> The entrypoint rewrites `web.xml` on container start, so an existing pod must be
-> restarted for a change to this value to take effect.
+> Both halves are delivered through ConfigMaps, and neither pod spec changes when the
+> value does — so `helm upgrade` alone will not apply it. The geoserver pod must restart
+> for the entrypoint to rewrite `web.xml`, and the nginx pod must restart because the
+> snippet is a `subPath` mount, which kubelet never refreshes.
+
+> [!CAUTION]
+> nginx is not an equivalent replacement for `CorsFilter`. It emits only
+> `Access-Control-Allow-Origin`, `-Allow-Headers` and `-Max-Age`, never
+> `-Expose-Headers`; and because those `add_header` directives lack the `always`
+> parameter, **no CORS headers are sent on 4xx/5xx responses**. Cross-origin callers
+> will see GeoServer errors as opaque CORS failures rather than real status codes.
+> Only enable this where nginx actually fronts GeoServer — with `nginx.enabled: false`
+> or the Dev-local route below, the flag removes CORS altogether.
 
 
 ## Deployment

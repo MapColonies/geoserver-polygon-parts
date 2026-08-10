@@ -246,7 +246,11 @@ nginx:
   extraVolumes:
   - name: nginx-config
     configMap:
-      name: '{{ .Release.Name }}-nginx-configmap'
+      # Must match the name templates/configmap-nginx.yaml actually creates,
+      # which is `<release>-<chart>-nginx-configmap`. Without the chart name in
+      # here the nginx pod cannot mount the snippets and stays in
+      # ContainerCreating on a stock `helm install` of this chart.
+      name: '{{ .Release.Name }}-pp-geoserver-nginx-configmap'
 
   extraVolumeMounts:
   - name: nginx-config
