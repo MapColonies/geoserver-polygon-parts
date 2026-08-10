@@ -18,6 +18,7 @@ data:
   UPDATE_INTERVAL: {{ .Values.updateInterval | default 120000 | quote }}
   INITIAL_MEMORY: {{ .Values.initialMemory | default "128M" | quote }}
   MAX_MEMORY: {{ .Values.maxMemory | default "756M" | quote }}
+  DISABLE_CORS: {{ .Values.disableCors | default false | quote }}
   GEOSERVER_DATA_DIR: {{ $fs.internalPvc.mountPath | quote }}
   POLLING_INTERVAL_MS: {{ .Values.sideCar.env.pollingIntervalMs | default 3000 | quote }}
   GEOSERVER_BASE_URL: {{ $serviceUrls.geoserverUrl | quote }}
