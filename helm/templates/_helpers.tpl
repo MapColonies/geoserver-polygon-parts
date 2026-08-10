@@ -20,6 +20,19 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
+Normalise disableCors to the literal "true"/"false".
+
+Both halves of the flag have to agree, and they read it differently: the nginx
+snippet is gated by Go-template truthiness (where any non-empty string, "false"
+included, is true) while the geoserver image only acts on a case-insensitive
+"true". Deciding once here keeps a quoted `disableCors: "false"` from turning the
+nginx half on while leaving the geoserver half off.
+*/}}
+{{- define "geoserver.disableCors" -}}
+{{- eq (lower (toString (.Values.disableCors | default false))) "true" -}}
+{{- end -}}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "geoserver.chart" -}}
