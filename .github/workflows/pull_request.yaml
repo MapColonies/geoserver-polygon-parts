@@ -32,4 +32,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
