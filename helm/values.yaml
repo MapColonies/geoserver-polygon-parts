@@ -2,8 +2,6 @@ global:
   cloudProvider: {}
   environment: ''
   db: {}
-  tracing: {}
-  metrics: {}
   storage: {}
   geoserver: {}
   serviceUrls: {}
@@ -23,18 +21,9 @@ cloudProvider:
   dockerRegistryUrl: my-registry-url.io
   imagePullSecretName: 'my-registry-secret'
 
-tracing:
-  enabled: false
-metrics:
-  enabled: false
-  prometheus:
-    scrape: false
-    ## Note: this is set to 12345 because this is the port the metrics goes to in the geoserver itself as set in the docker image
-    port: 12345
-
 ### Useful for umbrella deployments in cases which no need geoserver serving ###
 enabled: true
-imagePullPolicy: Always
+imagePullPolicy: IfNotPresent
 
 image:
   geoserverRepository: geoserver-os
