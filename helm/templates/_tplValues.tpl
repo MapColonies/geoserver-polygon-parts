@@ -65,12 +65,3 @@ Custom definitions
 {{- define "common.serviceUrls.merged" -}}
 {{- include "common.tplvalues.merge" ( dict "values" ( list .Values.serviceUrls .Values.global.serviceUrls ) "context" . ) }}
 {{- end -}}
-
-{{- define "common.tracing.merged" -}}
-{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.tracing .Values.global.tracing ) "context" . ) }}
-{{- end -}}
-
-{{- define "common.metrics.merged" -}}
-{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.metrics .Values.global.metrics ) "context" . ) }}
-{{- end -}}
-
