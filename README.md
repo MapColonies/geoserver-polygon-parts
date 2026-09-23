@@ -6,7 +6,6 @@ This repo including entire suite of geoserver deployment including initial mecha
 1. <img src="https://cdn.iconscout.com/icon/premium/png-512-thumb/sidecar-10451424-8438367.png?f=webp&w=256" width="30" height="30" alt="gs logo"><img src="https://www.svgrepo.com/show/439238/nodejs.svg" width="30" height="30" alt="gs logo"> Side-car (Source code) that run procedures over geoserver-api service that initializes the geoserver in new environments.
 2. <img src="https://avatars.githubusercontent.com/u/7395888?s=200&v=4" width="30" height="30" alt="gs logo"><img src="https://icon.icepanel.io/Technology/svg/Helm.svg" width="30" height="30" alt="gs logo"> Full helm deployment of kartoza-geoserver including initialization with side-car
 3. <img src="https://www.svgrepo.com/show/373924/nginx.svg" width="30" height="30" alt="gs logo"><img src="https://www.svgrepo.com/show/448547/opa.svg" width="30" height="30" alt="gs logo"> Support deployment with proxy-nginx & opa-la authentication.
-4. OpenShift-ready GeoServer image (`geoserver/`) - kartoza/geoserver patched to run under an arbitrary UID.
 
 
 <br>
@@ -14,4 +13,3 @@ This repo including entire suite of geoserver deployment including initial mecha
 ## Detailed information:
 1. [Sidecar](src/README.md)
 3. [Helm](helm/README.md)
-4. [GeoServer image](geoserver/README.md)
