@@ -37,8 +37,9 @@ enabled: true
 imagePullPolicy: Always
 
 image:
-  geoserverRepository: geoserver-os
-  geoserverTag: "latest"
+  # Built from ./geoserver (see README)
+  geoserverRepository: raster/geoserver-os
+  geoserverTag: "v1.0.0-3.0.1--v2026.09.04"
   sidecarRepository: pp-geoserver-side-car
   sidecarTag: "latest"
 
