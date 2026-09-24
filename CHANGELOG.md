@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.3.2](https://github.com/MapColonies/geoserver-polygon-parts/compare/v3.3.1...v3.3.2) (2026-09-24)
+
+
+### Helm Changes
+
+* **deps:** bump nginx subchart 2.3.1 -&gt; 2.5.0 ([#56](https://github.com/MapColonies/geoserver-polygon-parts/issues/56)) ([3b3fb47](https://github.com/MapColonies/geoserver-polygon-parts/commit/3b3fb4768bd6af3a666eadac7489df32acb05bbc))
+
 ## [3.3.1](https://github.com/MapColonies/geoserver-polygon-parts/compare/v3.3.0...v3.3.1) (2026-08-03)
 
 
