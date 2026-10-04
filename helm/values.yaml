@@ -146,7 +146,9 @@ service:
 
 route:
   enabled: false
-  tls: false
+  # a map, not a bool: a bool here collides with nginx.route.tls when helm evaluates the nginx dependency condition
+  tls:
+    enabled: false
   path: /geoserver
 
 sideCar:
