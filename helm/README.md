@@ -38,7 +38,8 @@ helm install deployment-name .
 ```yaml
 route:
   enabled: true
-  tls: false
+  tls:
+    enabled: false
   path: /geoserver
 ```
 2. configure PROXY_BASE_URL:

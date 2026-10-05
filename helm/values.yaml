@@ -146,7 +146,8 @@ service:
 
 route:
   enabled: false
-  tls: false
+  tls:
+    enabled: false
   path: /geoserver
 
 sideCar:
