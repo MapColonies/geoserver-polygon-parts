@@ -54,12 +54,12 @@ spec:
           - name: GEOSERVER_ADMIN_USER
             valueFrom:
               secretKeyRef:
-                name: {{ template "secret.fullname" . }}
+                name: {{ include "geoserver.secretName" . }}
                 key: GEOSERVER_USER
           - name: GEOSERVER_ADMIN_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{ template "secret.fullname" . }}
+                name: {{ include "geoserver.secretName" . }}
                 key: GEOSERVER_PASS
           {{- if .Values.pgSslAuth.enabled }}
           - name: POSTGRES_ENABLE_SSL_AUTH
@@ -134,7 +134,7 @@ spec:
           {{- end }}
         envFrom:
           - secretRef:
-              name: {{ template "secret.fullname" . }}
+              name: {{ include "geoserver.secretName" . }}
           - configMapRef:
               name: {{ template "configmap.fullname" . }}
       volumes:
