@@ -25,6 +25,15 @@ Create mapproxy nginx configmap name name as used by the service name label.
 {{- printf "%s-secret" $geoserverFullname | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
+{{- define "geoserver.secretName" -}}
+{{- $geoserver := (include "common.geoserver.merged" .) | fromYaml }}
+{{- if $geoserver.secrets.useExternal -}}
+{{- required "geoserver.secrets.externalSecretName is required when geoserver.secrets.useExternal is true: name of a Secret with the keys GEOSERVER_USER and GEOSERVER_PASS" $geoserver.secrets.externalSecretName -}}
+{{- else -}}
+{{- include "secret.fullname" . -}}
+{{- end -}}
+{{- end }}
+
 {{- define "deployment.fullname" -}}
 {{- $geoserverFullname := include "geoserver.fullname" . }}
 {{- printf "%s-deployment" $geoserverFullname | trunc 63 | trimSuffix "-" }}
