@@ -152,6 +152,8 @@ route:
   path: /geoserver
 
 sideCar:
+  # false: no WFS layer publishing, e.g. for a WCS-only GeoServer
+  enabled: true
   env:
     logLevel: "info"
     logPretty: "false"

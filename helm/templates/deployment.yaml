@@ -120,6 +120,7 @@ spec:
         - name: root-cert-conf
           mountPath: {{ .Values.rootCerts.mountPath }}
         {{- end }}
+      {{- if .Values.sideCar.enabled }}
       - name: {{ template "geoserver.fullname" . }}-init
         image: {{ include "geoserver.sidecarImage" . }}
         volumeMounts:
@@ -137,6 +138,7 @@ spec:
               name: {{ include "geoserver.secretName" . }}
           - configMapRef:
               name: {{ template "configmap.fullname" . }}
+      {{- end }}
       volumes:
       - name: data-dir-volume
         persistentVolumeClaim:
