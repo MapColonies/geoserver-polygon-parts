@@ -52,6 +52,10 @@ fullnameOverride: pp-geoserver
 initialMemory: "128M"
 maxMemory: "756M"
 
+# Disables GeoServer's own CORS handling (Tomcat CorsFilter), leaving the
+# nginx front layer as the single source of CORS response headers.
+disableCors: false
+
 storage:
   fs:
     internalPvc:
