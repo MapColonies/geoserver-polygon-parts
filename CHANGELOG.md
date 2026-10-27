@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [4.0.0](https://github.com/MapColonies/geoserver-polygon-parts/compare/v3.3.2...v4.0.0) (2026-10-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* read geoserver credentials from an external secret by default ([#61](https://github.com/MapColonies/geoserver-polygon-parts/issues/61))
+
+### Helm Changes
+
+* read geoserver credentials from an external secret by default ([#61](https://github.com/MapColonies/geoserver-polygon-parts/issues/61)) ([af180be](https://github.com/MapColonies/geoserver-polygon-parts/commit/af180be158d61f7ef9031f936d18b014e9886fd3))
+
 ## [3.3.2](https://github.com/MapColonies/geoserver-polygon-parts/compare/v3.3.1...v3.3.2) (2026-09-24)
 
 
