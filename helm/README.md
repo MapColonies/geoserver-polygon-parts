@@ -17,6 +17,25 @@
 > [!IMPORTANT]
 > PROXY_BASE_URL must be changed according to deployed route.
 
+### CORS
+Two layers can emit CORS response headers: the nginx sub-chart (which always adds them at
+server level) and GeoServer itself (Tomcat's `CorsFilter`, enabled by default in the
+kartoza-based image). Behind nginx that yields two `Access-Control-Allow-Origin` headers.
+
+`disableCors` turns GeoServer's own handling off, leaving nginx as the single source:
+
+```yaml
+disableCors: true
+```
+
+It renders the `DISABLE_CORS` env var into the ConfigMap, which the geoserver container
+consumes via `envFrom`. The image's entrypoint comments the `CorsFilter` out of
+`conf/web.xml` when it is `true`. Defaults to `false`, preserving current behaviour.
+
+> [!NOTE]
+> The entrypoint rewrites `web.xml` on container start, so an existing pod must be
+> restarted for a change to this value to take effect.
+
 
 ## Deployment
 
