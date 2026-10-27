@@ -60,7 +60,9 @@ storage:
       geoserverDataDirSubPath: ""
 geoserver:
   secrets:
-    createSecret: true
+    # true: externalSecretName must hold GEOSERVER_USER and GEOSERVER_PASS; false: created from auth
+    useExternal: true
+    externalSecretName: ""
   auth:
     password: ""
     username: ""
@@ -150,6 +152,8 @@ route:
   path: /geoserver
 
 sideCar:
+  # false: no WFS layer publishing, e.g. for a WCS-only GeoServer
+  enabled: true
   env:
     logLevel: "info"
     logPretty: "false"

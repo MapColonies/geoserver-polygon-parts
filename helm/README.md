@@ -32,6 +32,12 @@ helm install deployment-name .
 > [!CAUTION]
 > Validate route section at values false if you deploy with nginx.
 
+> [!IMPORTANT]
+> By default the admin credentials come from an existing Secret with the keys
+> `GEOSERVER_USER` and `GEOSERVER_PASS`, named by `geoserver.secrets.externalSecretName`
+> (or `global.geoserver.secrets.externalSecretName`, to share it with other charts).
+> Set `geoserver.secrets.useExternal: false` to have the chart create it from `geoserver.auth`.
+
 
 ## Dev-local mode
 1. configure route on .Value level to true
