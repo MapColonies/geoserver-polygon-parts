@@ -8,7 +8,9 @@ spec:
   to:
     kind: Service
     name: {{ template "geoserver.fullname" . }}
-  {{ if .Values.route.tls }}
+  {{- $tls := .Values.route.tls }}
+  {{- if kindIs "map" $tls }}{{ $tls = $tls.enabled }}{{ end }}
+  {{ if $tls }}
   tls:
     termination: edge
   {{ end }}
