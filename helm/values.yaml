@@ -70,16 +70,23 @@ geoserver:
   dataStore: ""
 serviceUrls:
   geoserverUrl: ""
-  geoserverApiUrl: ""
   catalogManager: ""
 
 readiness:
   path: "/geoserver" # change it according to workspace name changing
 
+# polygon parts database, the side-car creates the geoserver data store over it
 db:
   host: ""
   name: ""
   port: 5432
+  schema: "polygon_parts"
+  dbType: "postgis"
+  sslEnabled: false
+  secrets:
+    useExternal: true
+    # secret with username and password keys
+    externalSecretName: ""
 
 rootCerts:
   enabled: false
@@ -158,6 +165,7 @@ sideCar:
     logLevel: "info"
     logPretty: "false"
     pollingIntervalMs: 3000
+    wfsMaxFeatures: 1000
     # ssl:
     #   CA_DIR: /opt/certs/ca/
     #   KEY_DIR: /opt/certs/key/

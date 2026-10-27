@@ -21,7 +21,7 @@ data:
   GEOSERVER_DATA_DIR: {{ $fs.internalPvc.mountPath | quote }}
   POLLING_INTERVAL_MS: {{ .Values.sideCar.env.pollingIntervalMs | default 3000 | quote }}
   GEOSERVER_BASE_URL: {{ $serviceUrls.geoserverUrl | quote }}
-  GEOSERVER_API_BASE_URL : {{ $serviceUrls.geoserverApiUrl | quote }}
+  WFS_MAX_FEATURES: {{ .Values.sideCar.env.wfsMaxFeatures | default 1000 | quote }}
   CATALOG_MANAGER_SERVICE_URL : {{ $serviceUrls.catalogManager | quote }}
   WORKSPACE_NAME: {{ $geoserver.workspace | quote }}
   DATASTORE_NAME: {{ $geoserver.dataStore | quote }}
